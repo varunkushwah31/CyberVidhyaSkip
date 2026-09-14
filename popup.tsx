@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react"
-import type { AttendanceStore, SubjectAttendance } from "./types"
+import type { AttendanceStore, SubjectAttendance } from "~types"
 
 function IndexPopup() {
   const [data, setData] = useState<AttendanceStore | null>(null)
@@ -11,10 +11,7 @@ function IndexPopup() {
   const [scanning, setScanning] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
   const [activeFilter, setActiveFilter] = useState<"all" | "risk" | "safe">("all")
-  const [showDiag, setShowDiag] = useState(false)
-  const [diagInfo, setDiagInfo] = useState<any>(null)
 
-  // 1. Load cached data from chrome.storage.local
   const loadStoredData = () => {
     if (typeof chrome !== "undefined" && chrome.storage?.local) {
       chrome.storage.local.get(["attendanceData"], (result) => {
@@ -28,7 +25,6 @@ function IndexPopup() {
     }
   }
 
-  // 2. Query active tab and attempt communication with content script
   const checkActiveTab = () => {
     if (typeof chrome !== "undefined" && chrome.tabs) {
       chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -39,10 +35,8 @@ function IndexPopup() {
           const isCV = tab.url.includes("cybervidya.net")
           setIsCyberVidhya(isCV)
 
-          // Try pinging content script
           chrome.tabs.sendMessage(tab.id, { action: "SCAN_NOW" }, (response) => {
             if (chrome.runtime.lastError) {
-              // Script is not yet injected into this tab (tab needs refresh)
               setScriptConnected(false)
             } else if (response?.success) {
               setScriptConnected(true)
@@ -58,7 +52,6 @@ function IndexPopup() {
     loadStoredData()
     checkActiveTab()
 
-    // Listen for storage changes in real time
     const listener = (changes: { [key: string]: chrome.storage.StorageChange }) => {
       if (changes.attendanceData?.newValue) {
         setData(changes.attendanceData.newValue)
@@ -71,11 +64,10 @@ function IndexPopup() {
     }
   }, [])
 
-  // Manual Trigger: Scan Active Tab
   const handleScanNow = () => {
     if (!activeTabId) return
     setScanning(true)
-    chrome.tabs.sendMessage(activeTabId, { action: "SCAN_NOW" }, (res) => {
+    chrome.tabs.sendMessage(activeTabId, { action: "SCAN_NOW" }, () => {
       setScanning(false)
       if (chrome.runtime.lastError) {
         setScriptConnected(false)
@@ -86,7 +78,6 @@ function IndexPopup() {
     })
   }
 
-  // Manual Trigger: Reload Active Tab
   const handleReloadTab = () => {
     if (activeTabId) {
       chrome.tabs.reload(activeTabId, {}, () => {
@@ -95,106 +86,164 @@ function IndexPopup() {
     }
   }
 
-  // Manual Trigger: Diagnostics
-  const handleRunDiagnostics = () => {
-    if (!activeTabId) return
-    chrome.tabs.sendMessage(activeTabId, { action: "DIAGNOSE" }, (res) => {
-      if (chrome.runtime.lastError) {
-        setDiagInfo({
-          error: "Content script is not connected to this tab. Please refresh the page."
-        })
-      } else {
-        setDiagInfo(res?.report)
-      }
-      setShowDiag(true)
-    })
-  }
+  // Filter out any anomalous date-like entries (ensures 100% subject-wise display)
+  const cleanSubjects = useMemo(() => {
+    if (!data?.subjects) return []
+    return data.subjects.filter(
+      (s) =>
+        !/\b\d{1,2}[-\/]\d{1,2}[-\/]\d{2,4}\b/.test(s.subjectName) &&
+        s.subjectName.length > 2
+    )
+  }, [data?.subjects])
 
   const filteredSubjects = useMemo(() => {
-    if (!data?.subjects) return []
-    return data.subjects.filter((sub) => {
+    return cleanSubjects.filter((sub) => {
       const matchesSearch = sub.subjectName.toLowerCase().includes(searchTerm.toLowerCase())
       if (!matchesSearch) return false
       if (activeFilter === "risk") return sub.status === "deficit"
       if (activeFilter === "safe") return sub.status === "surplus" || sub.status === "boundary"
       return true
     })
-  }, [data, searchTerm, activeFilter])
+  }, [cleanSubjects, searchTerm, activeFilter])
+
+  const detentionCount = useMemo(() => {
+    return cleanSubjects.filter((s) => s.status === "deficit").length
+  }, [cleanSubjects])
+
+  const aggregatePercentage = useMemo(() => {
+    const totalAttended = cleanSubjects.reduce((acc, s) => acc + s.attended, 0)
+    const totalClasses = cleanSubjects.reduce((acc, s) => acc + s.total, 0)
+    return totalClasses > 0 ? Number(((totalAttended / totalClasses) * 100).toFixed(1)) : 0
+  }, [cleanSubjects])
 
   return (
     <div
       style={{
-        width: 380,
-        maxHeight: 580,
-        fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+        width: 390,
+        maxHeight: 590,
+        fontFamily:
+          "-apple-system, BlinkMacSystemFont, 'Inter', 'SF Pro Display', 'Segoe UI', Roboto, sans-serif",
         backgroundColor: "#f8fafc",
         color: "#0f172a",
         margin: 0,
         display: "flex",
         flexDirection: "column",
-        overflow: "hidden"
+        overflow: "hidden",
+        boxSizing: "border-box"
       }}>
-      {/* Header */}
+      {/* Sleek Custom Scrollbar Style */}
+      <style>{`
+        ::-webkit-scrollbar {
+          width: 5px;
+        }
+        ::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+          background: #cbd5e1;
+          border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+          background: #94a3b8;
+        }
+      `}</style>
+
+      {/* Top Header */}
       <div
         style={{
-          background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)",
+          background: "linear-gradient(135deg, #090d16 0%, #171c28 50%, #1e1b4b 100%)",
           color: "#ffffff",
-          padding: "14px 18px",
-          borderBottom: "1px solid #334155"
+          padding: "16px 20px 14px 20px",
+          borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
+          boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)"
         }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div>
-            <h1 style={{ margin: 0, fontSize: 16, fontWeight: 700, letterSpacing: "-0.01em" }}>
-              Attendance & Bunk Planner
-            </h1>
-            <p style={{ margin: "2px 0 0 0", fontSize: 11, color: "#94a3b8" }}>
-              Strict 75% Rule Enforcer
-            </p>
-          </div>
-          {data?.lastUpdated && (
-            <span
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div
               style={{
-                fontSize: 10,
-                color: "#cbd5e1",
-                background: "rgba(255, 255, 255, 0.1)",
-                padding: "3px 8px",
-                borderRadius: 10
+                width: 32,
+                height: 32,
+                borderRadius: 10,
+                background: "linear-gradient(135deg, #6366f1 0%, #a855f7 100%)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 16,
+                boxShadow: "0 2px 8px rgba(99, 102, 241, 0.3)"
               }}>
-              Synced{" "}
-              {new Date(data.lastUpdated).toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit"
-              })}
-            </span>
-          )}
+              ⚡
+            </div>
+            <div>
+              <h1
+                style={{
+                  margin: 0,
+                  fontSize: 15,
+                  fontWeight: 700,
+                  letterSpacing: "-0.02em",
+                  color: "#f8fafc"
+                }}>
+                Bunk Planner
+              </h1>
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: 11,
+                  color: "#94a3b8",
+                  fontWeight: 500
+                }}>
+                Strict 75% Attendance Guard
+              </p>
+            </div>
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <button
+              onClick={handleScanNow}
+              disabled={scanning}
+              title="Rescan Attendance"
+              style={{
+                background: "rgba(255, 255, 255, 0.1)",
+                border: "1px solid rgba(255, 255, 255, 0.15)",
+                color: "#e2e8f0",
+                width: 28,
+                height: 28,
+                borderRadius: 8,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                fontSize: 13,
+                transition: "all 0.15s ease"
+              }}>
+              {scanning ? "…" : "🔄"}
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* CyberVidhya Tab Connection Notice */}
+      {/* Tab Connection Alert */}
       {isCyberVidhya && scriptConnected === false && (
         <div
           style={{
             backgroundColor: "#fffbeb",
-            borderBottom: "1px solid #fde68a",
+            borderBottom: "1px solid #fef3c7",
             padding: "10px 16px",
             fontSize: 11,
-            color: "#92400e"
+            color: "#92400e",
+            display: "flex",
+            flexDirection: "column",
+            gap: 6
           }}>
-          <div style={{ fontWeight: 700, marginBottom: 4 }}>⚠️ Tab Not Connected Yet</div>
-          <div>
-            Chrome requires you to refresh tabs opened before installing the extension. Click below to reload your CyberVidhya tab:
-          </div>
+          <div style={{ fontWeight: 600 }}>⚠️ Connection needed to this tab</div>
           <button
             onClick={handleReloadTab}
             style={{
-              marginTop: 8,
-              width: "100%",
               backgroundColor: "#d97706",
               color: "#ffffff",
               border: "none",
               borderRadius: 6,
-              padding: "6px 12px",
-              fontWeight: 700,
+              padding: "5px 10px",
+              fontWeight: 600,
               fontSize: 11,
               cursor: "pointer"
             }}>
@@ -204,102 +253,63 @@ function IndexPopup() {
       )}
 
       {loading ? (
-        <div style={{ padding: 40, textAlign: "center", color: "#64748b", fontSize: 13 }}>
-          Loading attendance data...
+        <div style={{ padding: 48, textAlign: "center", color: "#64748b", fontSize: 13 }}>
+          Loading your courses...
         </div>
-      ) : !data || data.subjects.length === 0 ? (
+      ) : cleanSubjects.length === 0 ? (
         /* Empty State */
-        <div style={{ padding: 24, textAlign: "center" }}>
+        <div style={{ padding: 36, textAlign: "center" }}>
           <div
             style={{
-              width: 48,
-              height: 48,
-              borderRadius: "50%",
-              backgroundColor: "#e0f2fe",
-              color: "#0284c7",
+              width: 52,
+              height: 52,
+              borderRadius: 16,
+              backgroundColor: "#e0e7ff",
+              color: "#4f46e5",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              margin: "0 auto 12px auto",
-              fontSize: 22
+              margin: "0 auto 14px auto",
+              fontSize: 24,
+              boxShadow: "0 4px 12px rgba(79, 70, 229, 0.12)"
             }}>
-            🎓
+            📚
           </div>
-          <h3 style={{ margin: "0 0 6px 0", fontSize: 15, fontWeight: 700 }}>
-            No Scraped Data Found
-          </h3>
-          <p style={{ margin: "0 0 14px 0", fontSize: 12, color: "#64748b", lineHeight: 1.5 }}>
-            {isCyberVidhya
-              ? "You are on CyberVidhya! Ensure your attendance table or widget is visible on this page, then click Scan below."
-              : "Open your college CyberVidhya ERP portal (e.g. kiet.cybervidya.net) and navigate to your attendance page."}
-          </p>
-
-          <div style={{ display: "flex", gap: 8 }}>
-            <button
-              onClick={handleScanNow}
-              disabled={scanning}
-              style={{
-                flex: 1,
-                backgroundColor: "#0284c7",
-                color: "#ffffff",
-                border: "none",
-                borderRadius: 8,
-                padding: "8px 12px",
-                fontWeight: 700,
-                fontSize: 12,
-                cursor: "pointer"
-              }}>
-              {scanning ? "Scanning..." : "🔍 Scan Current Page"}
-            </button>
-            {isCyberVidhya && (
-              <button
-                onClick={handleReloadTab}
-                style={{
-                  backgroundColor: "#f1f5f9",
-                  color: "#334155",
-                  border: "1px solid #cbd5e1",
-                  borderRadius: 8,
-                  padding: "8px 12px",
-                  fontWeight: 600,
-                  fontSize: 12,
-                  cursor: "pointer"
-                }}>
-                🔄 Reload
-              </button>
-            )}
-          </div>
-
-          <button
-            onClick={handleRunDiagnostics}
+          <h3
             style={{
-              marginTop: 10,
-              background: "none",
-              border: "none",
-              color: "#64748b",
-              fontSize: 11,
-              textDecoration: "underline",
-              cursor: "pointer"
+              margin: "0 0 6px 0",
+              fontSize: 16,
+              fontWeight: 700,
+              color: "#1e293b",
+              letterSpacing: "-0.01em"
             }}>
-            🛠️ Diagnose Page Layout
+            No Subjects Detected
+          </h3>
+          <p
+            style={{
+              margin: "0 0 16px 0",
+              fontSize: 12,
+              color: "#64748b",
+              lineHeight: 1.5
+            }}>
+            Log into your CyberVidhya portal and open your Attendance dashboard. Your subject-wise classes will sync automatically!
+          </p>
+          <button
+            onClick={handleScanNow}
+            disabled={scanning}
+            style={{
+              backgroundColor: "#4f46e5",
+              color: "#ffffff",
+              border: "none",
+              borderRadius: 10,
+              padding: "9px 18px",
+              fontWeight: 600,
+              fontSize: 12,
+              cursor: "pointer",
+              boxShadow: "0 2px 6px rgba(79, 70, 229, 0.3)"
+            }}>
+            {scanning ? "Scanning..." : "🔍 Scan Now"}
           </button>
-
-          {showDiag && (
-            <div
-              style={{
-                marginTop: 12,
-                textAlign: "left",
-                backgroundColor: "#0f172a",
-                color: "#cbd5e1",
-                padding: 10,
-                borderRadius: 8,
-                fontSize: 10,
-                maxHeight: 140,
-                overflowY: "auto",
-                whiteSpace: "pre-wrap"
-              }}>
-              {JSON.stringify(diagInfo, null, 2)}
-            </div>
-          )}
         </div>
       ) : (
         /* Main Dashboard */
@@ -311,16 +321,16 @@ function IndexPopup() {
             flexDirection: "column",
             gap: 12
           }}>
-          {/* Overall Stats Card */}
+          {/* Hero Aggregate Card */}
           <div
             style={{
-              backgroundColor: "#ffffff",
-              borderRadius: 12,
-              padding: "14px 16px",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+              background: "linear-gradient(145deg, #ffffff 0%, #f1f5f9 100%)",
+              borderRadius: 16,
+              padding: "16px 18px",
+              boxShadow: "0 4px 16px -2px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.03)",
               border: "1px solid #e2e8f0"
             }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
               <div>
                 <span
                   style={{
@@ -328,233 +338,322 @@ function IndexPopup() {
                     textTransform: "uppercase",
                     color: "#64748b",
                     fontWeight: 700,
-                    letterSpacing: "0.05em"
+                    letterSpacing: "0.08em"
                   }}>
-                  Aggregate Attendance
+                  Overall Attendance
                 </span>
                 <div
                   style={{
-                    fontSize: 24,
+                    fontSize: 28,
                     fontWeight: 800,
-                    color: data.overall.percentage >= 75 ? "#10b981" : "#ef4444"
+                    letterSpacing: "-0.03em",
+                    color: aggregatePercentage >= 75 ? "#059669" : "#dc2626",
+                    lineHeight: 1.1,
+                    marginTop: 2
                   }}>
-                  {data.overall.percentage}%
+                  {aggregatePercentage}%
                 </div>
               </div>
-              <div style={{ textAlign: "right" }}>
-                {data.overall.detentionCount > 0 ? (
-                  <span
-                    style={{
-                      display: "inline-block",
-                      backgroundColor: "#fee2e2",
-                      color: "#dc2626",
-                      fontSize: 11,
-                      fontWeight: 700,
-                      padding: "4px 10px",
-                      borderRadius: 16
-                    }}>
-                    ⚠️ {data.overall.detentionCount} below 75%
-                  </span>
-                ) : (
-                  <span
-                    style={{
-                      display: "inline-block",
-                      backgroundColor: "#d1fae5",
-                      color: "#059669",
-                      fontSize: 11,
-                      fontWeight: 700,
-                      padding: "4px 10px",
-                      borderRadius: 16
-                    }}>
-                    ✅ Safe in all subjects
-                  </span>
-                )}
+
+              {detentionCount > 0 ? (
+                <div
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 4,
+                    backgroundColor: "#fef2f2",
+                    color: "#dc2626",
+                    border: "1px solid #fecdd3",
+                    fontSize: 11,
+                    fontWeight: 700,
+                    padding: "4px 10px",
+                    borderRadius: 20
+                  }}>
+                  <span>⚠️</span>
+                  <span>{detentionCount} at risk</span>
+                </div>
+              ) : (
+                <div
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 4,
+                    backgroundColor: "#ecfdf5",
+                    color: "#059669",
+                    border: "1px solid #a7f3d0",
+                    fontSize: 11,
+                    fontWeight: 700,
+                    padding: "4px 10px",
+                    borderRadius: 20
+                  }}>
+                  <span>🛡️</span>
+                  <span>All Safe (≥75%)</span>
+                </div>
+              )}
+            </div>
+
+            {/* Visual 75% Goal Line */}
+            <div style={{ marginTop: 12, marginBottom: 12 }}>
+              <div
+                style={{
+                  position: "relative",
+                  height: 8,
+                  backgroundColor: "#e2e8f0",
+                  borderRadius: 9999,
+                  overflow: "hidden"
+                }}>
+                <div
+                  style={{
+                    height: "100%",
+                    width: `${Math.min(100, aggregatePercentage)}%`,
+                    background:
+                      aggregatePercentage >= 75
+                        ? "linear-gradient(90deg, #10b981 0%, #059669 100%)"
+                        : "linear-gradient(90deg, #f87171 0%, #ef4444 100%)",
+                    borderRadius: 9999,
+                    transition: "width 0.4s ease"
+                  }}
+                />
+                {/* 75% Target Marker */}
+                <div
+                  style={{
+                    position: "absolute",
+                    left: "75%",
+                    top: 0,
+                    bottom: 0,
+                    width: 2,
+                    backgroundColor: "#0f172a",
+                    opacity: 0.5
+                  }}
+                />
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  fontSize: 9,
+                  color: "#94a3b8",
+                  fontWeight: 600,
+                  marginTop: 3
+                }}>
+                <span>0%</span>
+                <span style={{ color: "#475569", fontWeight: 700 }}>Strict 75% Goal</span>
+                <span>100%</span>
               </div>
             </div>
 
-            {/* Quick Metrics */}
+            {/* Attendance Counts */}
             <div
               style={{
                 display: "grid",
                 gridTemplateColumns: "1fr 1fr 1fr",
-                marginTop: 10,
-                paddingTop: 10,
-                borderTop: "1px solid #f1f5f9",
+                paddingTop: 8,
+                borderTop: "1px solid #e2e8f0",
                 textAlign: "center"
               }}>
               <div>
-                <div style={{ fontSize: 10, color: "#64748b" }}>Attended</div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "#0f172a" }}>
-                  {data.overall.totalAttended}
+                <div style={{ fontSize: 10, color: "#64748b", fontWeight: 500 }}>Attended</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "#1e293b" }}>
+                  {cleanSubjects.reduce((acc, s) => acc + s.attended, 0)}
                 </div>
               </div>
               <div>
-                <div style={{ fontSize: 10, color: "#64748b" }}>Missed</div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "#0f172a" }}>
-                  {data.overall.totalMissed}
+                <div style={{ fontSize: 10, color: "#64748b", fontWeight: 500 }}>Missed</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "#1e293b" }}>
+                  {cleanSubjects.reduce((acc, s) => acc + s.missed, 0)}
                 </div>
               </div>
               <div>
-                <div style={{ fontSize: 10, color: "#64748b" }}>Total</div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "#0f172a" }}>
-                  {data.overall.totalClasses}
+                <div style={{ fontSize: 10, color: "#64748b", fontWeight: 500 }}>Total Held</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "#1e293b" }}>
+                  {cleanSubjects.reduce((acc, s) => acc + s.total, 0)}
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Search Bar & Action */}
-          <div style={{ display: "flex", gap: 6 }}>
-            <input
-              type="text"
-              placeholder="Search subject..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              style={{
-                flex: 1,
-                boxSizing: "border-box",
-                padding: "7px 10px",
-                borderRadius: 8,
-                border: "1px solid #cbd5e1",
-                fontSize: 11,
-                outline: "none"
-              }}
-            />
-            <button
-              onClick={handleScanNow}
-              disabled={scanning}
-              title="Rescan current page"
-              style={{
-                backgroundColor: "#f1f5f9",
-                color: "#334155",
-                border: "1px solid #cbd5e1",
-                borderRadius: 8,
-                padding: "0 10px",
-                fontSize: 12,
-                cursor: "pointer"
-              }}>
-              {scanning ? "..." : "🔄"}
-            </button>
-          </div>
-
-          {/* Filter Pills */}
-          <div style={{ display: "flex", gap: 6 }}>
-            {(
-              [
-                { key: "all", label: `All (${data.subjects.length})` },
-                { key: "risk", label: `At Risk (${data.overall.detentionCount})` },
-                { key: "safe", label: `Safe (${data.subjects.length - data.overall.detentionCount})` }
-              ] as const
-            ).map((f) => (
-              <button
-                key={f.key}
-                onClick={() => setActiveFilter(f.key)}
+          {/* Search & Filter Segments */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <div style={{ position: "relative" }}>
+              <input
+                type="text"
+                placeholder="Search course name..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
                 style={{
-                  flex: 1,
-                  padding: "5px 0",
-                  fontSize: 11,
-                  fontWeight: 600,
-                  borderRadius: 6,
-                  border: "none",
-                  cursor: "pointer",
-                  backgroundColor: activeFilter === f.key ? "#0f172a" : "#e2e8f0",
-                  color: activeFilter === f.key ? "#ffffff" : "#475569",
-                  transition: "all 0.15s ease"
+                  width: "100%",
+                  boxSizing: "border-box",
+                  padding: "8px 12px 8px 30px",
+                  borderRadius: 10,
+                  border: "1px solid #cbd5e1",
+                  backgroundColor: "#ffffff",
+                  fontSize: 12,
+                  outline: "none",
+                  boxShadow: "0 1px 2px rgba(0,0,0,0.03)"
+                }}
+              />
+              <span
+                style={{
+                  position: "absolute",
+                  left: 10,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  fontSize: 12,
+                  color: "#94a3b8"
                 }}>
-                {f.label}
-              </button>
-            ))}
+                🔍
+              </span>
+            </div>
+
+            {/* Filter Pills */}
+            <div
+              style={{
+                display: "flex",
+                background: "#e2e8f0",
+                padding: 3,
+                borderRadius: 10,
+                gap: 2
+              }}>
+              {(
+                [
+                  { key: "all", label: `All (${cleanSubjects.length})` },
+                  { key: "risk", label: `Below 75% (${detentionCount})` },
+                  { key: "safe", label: `Safe (${cleanSubjects.length - detentionCount})` }
+                ] as const
+              ).map((f) => {
+                const isActive = activeFilter === f.key
+                return (
+                  <button
+                    key={f.key}
+                    onClick={() => setActiveFilter(f.key)}
+                    style={{
+                      flex: 1,
+                      padding: "6px 0",
+                      fontSize: 11,
+                      fontWeight: isActive ? 700 : 500,
+                      borderRadius: 8,
+                      border: "none",
+                      cursor: "pointer",
+                      backgroundColor: isActive ? "#ffffff" : "transparent",
+                      color: isActive ? "#0f172a" : "#64748b",
+                      boxShadow: isActive ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
+                      transition: "all 0.15s ease"
+                    }}>
+                    {f.label}
+                  </button>
+                )
+              })}
+            </div>
           </div>
 
-          {/* Subject Cards List */}
+          {/* Subject Cards */}
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {filteredSubjects.map((sub: SubjectAttendance) => {
               const isDeficit = sub.status === "deficit"
               const isBoundary = sub.status === "boundary"
 
-              const badgeBg = isDeficit ? "#fee2e2" : isBoundary ? "#fef3c7" : "#d1fae5"
-              const badgeColor = isDeficit ? "#dc2626" : isBoundary ? "#b45309" : "#059669"
+              const badgeBg = isDeficit ? "#fff1f2" : isBoundary ? "#fffbeb" : "#ecfdf5"
+              const badgeColor = isDeficit ? "#be123c" : isBoundary ? "#b45309" : "#047857"
+              const badgeBorder = isDeficit ? "#fecdd3" : isBoundary ? "#fde68a" : "#a7f3d0"
+              const icon = isDeficit ? "🚨" : isBoundary ? "⚠️" : "🛡️"
 
               return (
                 <div
                   key={sub.id}
                   style={{
                     backgroundColor: "#ffffff",
-                    borderRadius: 10,
-                    padding: "10px 12px",
+                    borderRadius: 14,
+                    padding: "14px 16px",
                     border: "1px solid #e2e8f0",
-                    boxShadow: "0 1px 2px rgba(0,0,0,0.03)"
+                    boxShadow: "0 2px 6px -1px rgba(0, 0, 0, 0.03)",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 10
                   }}>
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "flex-start",
-                      gap: 8,
-                      marginBottom: 6
-                    }}>
-                    <span
+                  {/* Title & Percentage */}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+                    <div style={{ flex: 1 }}>
+                      <h4
+                        style={{
+                          margin: 0,
+                          fontSize: 13,
+                          fontWeight: 700,
+                          color: "#0f172a",
+                          lineHeight: 1.3
+                        }}>
+                        {sub.subjectName}
+                      </h4>
+                    </div>
+                    <div
                       style={{
-                        fontSize: 12,
-                        fontWeight: 600,
-                        color: "#1e293b",
-                        lineHeight: 1.3
-                      }}>
-                      {sub.subjectName}
-                    </span>
-                    <span
-                      style={{
-                        fontSize: 12,
+                        fontSize: 14,
                         fontWeight: 800,
                         color: isDeficit ? "#dc2626" : "#059669",
                         whiteSpace: "nowrap"
                       }}>
                       {sub.percentage}%
-                    </span>
+                    </div>
                   </div>
 
-                  {/* Progress Bar with 75% target marker */}
+                  {/* Progress Bar with 75% target tick */}
                   <div
                     style={{
                       position: "relative",
-                      height: 5,
-                      backgroundColor: "#e2e8f0",
-                      borderRadius: 3,
-                      overflow: "hidden",
-                      marginBottom: 8
+                      height: 6,
+                      backgroundColor: "#f1f5f9",
+                      borderRadius: 9999,
+                      overflow: "hidden"
                     }}>
                     <div
                       style={{
                         height: "100%",
                         width: `${Math.min(100, sub.percentage)}%`,
                         backgroundColor: isDeficit ? "#ef4444" : "#10b981",
-                        borderRadius: 3
+                        borderRadius: 9999
+                      }}
+                    />
+                    {/* Target line */}
+                    <div
+                      style={{
+                        position: "absolute",
+                        left: "75%",
+                        top: 0,
+                        bottom: 0,
+                        width: 2,
+                        backgroundColor: "#64748b",
+                        opacity: 0.4
                       }}
                     />
                   </div>
 
-                  {/* Footer details: counts + action badge */}
+                  {/* Action & Stats Row */}
                   <div
                     style={{
                       display: "flex",
                       justifyContent: "space-between",
                       alignItems: "center"
                     }}>
-                    <span style={{ fontSize: 10, color: "#64748b" }}>
-                      {sub.attended}/{sub.total} classes attended
+                    <span style={{ fontSize: 11, color: "#64748b", fontWeight: 500 }}>
+                      <strong style={{ color: "#334155" }}>{sub.attended}</strong>/{sub.total} attended
                       {sub.missed > 0 ? ` (${sub.missed} missed)` : ""}
                     </span>
 
                     <span
                       style={{
-                        fontSize: 10,
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 4,
+                        fontSize: 11,
                         fontWeight: 700,
                         backgroundColor: badgeBg,
                         color: badgeColor,
-                        padding: "2px 8px",
-                        borderRadius: 10
+                        border: `1px solid ${badgeBorder}`,
+                        padding: "3px 9px",
+                        borderRadius: 9999,
+                        letterSpacing: "-0.01em"
                       }}>
-                      {sub.message}
+                      <span>{icon}</span>
+                      <span>{sub.message}</span>
                     </span>
                   </div>
                 </div>
