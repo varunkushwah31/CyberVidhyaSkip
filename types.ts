@@ -1,12 +1,14 @@
 export interface SubjectAttendance {
   id: string
+  courseCode?: string
   subjectName: string
+  component?: string // THEORY, PRACTICAL, BLENDED, etc.
   attended: number
   missed: number
   total: number
   percentage: number
   status: "deficit" | "surplus" | "boundary"
-  actionCount: number // required to attend (if deficit) or safe to miss (if surplus)
+  actionCount: number
   message: string
 }
 

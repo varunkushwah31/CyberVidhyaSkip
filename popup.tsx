@@ -1,10 +1,22 @@
-import { useEffect, useMemo, useState } from "react"
-import type { AttendanceStore, SubjectAttendance } from "~types"
+import {
+  ArrowClockwiseIcon,
+  BookOpenIcon,
+  GraduationCapIcon,
+  MagnifyingGlassIcon,
+  ShieldCheckIcon,
+  WarningCircleIcon,
+  WarningIcon
+} from "@phosphor-icons/react"
+import { useEffect, useMemo, useState } from "react";
+
+
+
+import type { AttendanceStore, SubjectAttendance } from "~types";
+
 
 function IndexPopup() {
   const [data, setData] = useState<AttendanceStore | null>(null)
   const [loading, setLoading] = useState(true)
-  const [activeTabUrl, setActiveTabUrl] = useState("")
   const [activeTabId, setActiveTabId] = useState<number | null>(null)
   const [isCyberVidhya, setIsCyberVidhya] = useState(false)
   const [scriptConnected, setScriptConnected] = useState<boolean | null>(null)
@@ -31,7 +43,6 @@ function IndexPopup() {
         const tab = tabs[0]
         if (tab?.id && tab.url) {
           setActiveTabId(tab.id)
-          setActiveTabUrl(tab.url)
           const isCV = tab.url.includes("cybervidya.net")
           setIsCyberVidhya(isCV)
 
@@ -86,7 +97,7 @@ function IndexPopup() {
     }
   }
 
-  // Filter out any anomalous date-like entries (ensures 100% subject-wise display)
+  // Ensure 100% course/subject-wise list (filter any legacy date logs)
   const cleanSubjects = useMemo(() => {
     if (!data?.subjects) return []
     return data.subjects.filter(
@@ -98,7 +109,9 @@ function IndexPopup() {
 
   const filteredSubjects = useMemo(() => {
     return cleanSubjects.filter((sub) => {
-      const matchesSearch = sub.subjectName.toLowerCase().includes(searchTerm.toLowerCase())
+      const matchesSearch =
+        sub.subjectName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (sub.courseCode?.toLowerCase().includes(searchTerm.toLowerCase()))
       if (!matchesSearch) return false
       if (activeFilter === "risk") return sub.status === "deficit"
       if (activeFilter === "safe") return sub.status === "surplus" || sub.status === "boundary"
@@ -110,10 +123,26 @@ function IndexPopup() {
     return cleanSubjects.filter((s) => s.status === "deficit").length
   }, [cleanSubjects])
 
-  const aggregatePercentage = useMemo(() => {
+  const overallStats = useMemo(() => {
     const totalAttended = cleanSubjects.reduce((acc, s) => acc + s.attended, 0)
     const totalClasses = cleanSubjects.reduce((acc, s) => acc + s.total, 0)
-    return totalClasses > 0 ? Number(((totalAttended / totalClasses) * 100).toFixed(1)) : 0
+    const pct =
+      totalClasses > 0
+        ? Number(((totalAttended / totalClasses) * 100).toFixed(1))
+        : cleanSubjects.length > 0
+          ? Number(
+              (
+                cleanSubjects.reduce((acc, s) => acc + s.percentage, 0) /
+                cleanSubjects.length
+              ).toFixed(1)
+            )
+          : 0
+    return {
+      attended: totalAttended,
+      missed: cleanSubjects.reduce((acc, s) => acc + s.missed, 0),
+      total: totalClasses,
+      percentage: pct
+    }
   }, [cleanSubjects])
 
   return (
@@ -161,17 +190,17 @@ function IndexPopup() {
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <div
               style={{
-                width: 32,
-                height: 32,
+                width: 34,
+                height: 34,
                 borderRadius: 10,
                 background: "linear-gradient(135deg, #6366f1 0%, #a855f7 100%)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                fontSize: 16,
-                boxShadow: "0 2px 8px rgba(99, 102, 241, 0.3)"
+                color: "#ffffff",
+                boxShadow: "0 2px 8px rgba(99, 102, 241, 0.35)"
               }}>
-              ⚡
+              <GraduationCapIcon size={20} weight="fill" />
             </div>
             <div>
               <h1
@@ -184,13 +213,7 @@ function IndexPopup() {
                 }}>
                 Bunk Planner
               </h1>
-              <p
-                style={{
-                  margin: 0,
-                  fontSize: 11,
-                  color: "#94a3b8",
-                  fontWeight: 500
-                }}>
+              <p style={{ margin: 0, fontSize: 11, color: "#94a3b8", fontWeight: 500 }}>
                 Strict 75% Attendance Guard
               </p>
             </div>
@@ -200,22 +223,25 @@ function IndexPopup() {
             <button
               onClick={handleScanNow}
               disabled={scanning}
-              title="Rescan Attendance"
+              title="Rescan Courses"
               style={{
                 background: "rgba(255, 255, 255, 0.1)",
                 border: "1px solid rgba(255, 255, 255, 0.15)",
                 color: "#e2e8f0",
-                width: 28,
-                height: 28,
+                width: 30,
+                height: 30,
                 borderRadius: 8,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 cursor: "pointer",
-                fontSize: 13,
                 transition: "all 0.15s ease"
               }}>
-              {scanning ? "…" : "🔄"}
+              <ArrowClockwiseIcon
+                size={15}
+                weight="bold"
+                className={scanning ? "animate-spin" : ""}
+              />
             </button>
           </div>
         </div>
@@ -234,7 +260,10 @@ function IndexPopup() {
             flexDirection: "column",
             gap: 6
           }}>
-          <div style={{ fontWeight: 600 }}>⚠️ Connection needed to this tab</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 600 }}>
+            <WarningIcon size={15} weight="fill" color="#d97706" />
+            <span>Connection needed to this tab</span>
+          </div>
           <button
             onClick={handleReloadTab}
             style={{
@@ -247,14 +276,14 @@ function IndexPopup() {
               fontSize: 11,
               cursor: "pointer"
             }}>
-            🔄 Refresh CyberVidhya Tab
+            Refresh CyberVidhya Tab
           </button>
         </div>
       )}
 
       {loading ? (
         <div style={{ padding: 48, textAlign: "center", color: "#64748b", fontSize: 13 }}>
-          Loading your courses...
+          Loading course attendance...
         </div>
       ) : cleanSubjects.length === 0 ? (
         /* Empty State */
@@ -270,10 +299,9 @@ function IndexPopup() {
               alignItems: "center",
               justifyContent: "center",
               margin: "0 auto 14px auto",
-              fontSize: 24,
               boxShadow: "0 4px 12px rgba(79, 70, 229, 0.12)"
             }}>
-            📚
+            <BookOpenIcon size={26} weight="duotone" />
           </div>
           <h3
             style={{
@@ -283,7 +311,7 @@ function IndexPopup() {
               color: "#1e293b",
               letterSpacing: "-0.01em"
             }}>
-            No Subjects Detected
+            No Courses Detected
           </h3>
           <p
             style={{
@@ -292,7 +320,7 @@ function IndexPopup() {
               color: "#64748b",
               lineHeight: 1.5
             }}>
-            Log into your CyberVidhya portal and open your Attendance dashboard. Your subject-wise classes will sync automatically!
+            Log into CyberVidhya and open your general dashboard. Your registered courses and safe skip counts will sync automatically!
           </p>
           <button
             onClick={handleScanNow}
@@ -308,7 +336,7 @@ function IndexPopup() {
               cursor: "pointer",
               boxShadow: "0 2px 6px rgba(79, 70, 229, 0.3)"
             }}>
-            {scanning ? "Scanning..." : "🔍 Scan Now"}
+            {scanning ? "Scanning..." : "Scan Dashboard"}
           </button>
         </div>
       ) : (
@@ -321,7 +349,7 @@ function IndexPopup() {
             flexDirection: "column",
             gap: 12
           }}>
-          {/* Hero Aggregate Card */}
+          {/* Hero Overall Attendance Card */}
           <div
             style={{
               background: "linear-gradient(145deg, #ffffff 0%, #f1f5f9 100%)",
@@ -340,18 +368,18 @@ function IndexPopup() {
                     fontWeight: 700,
                     letterSpacing: "0.08em"
                   }}>
-                  Overall Attendance
+                  Aggregate Attendance
                 </span>
                 <div
                   style={{
                     fontSize: 28,
                     fontWeight: 800,
                     letterSpacing: "-0.03em",
-                    color: aggregatePercentage >= 75 ? "#059669" : "#dc2626",
+                    color: overallStats.percentage >= 75 ? "#059669" : "#dc2626",
                     lineHeight: 1.1,
                     marginTop: 2
                   }}>
-                  {aggregatePercentage}%
+                  {overallStats.percentage}%
                 </div>
               </div>
 
@@ -360,7 +388,7 @@ function IndexPopup() {
                   style={{
                     display: "inline-flex",
                     alignItems: "center",
-                    gap: 4,
+                    gap: 5,
                     backgroundColor: "#fef2f2",
                     color: "#dc2626",
                     border: "1px solid #fecdd3",
@@ -369,7 +397,7 @@ function IndexPopup() {
                     padding: "4px 10px",
                     borderRadius: 20
                   }}>
-                  <span>⚠️</span>
+                  <WarningCircleIcon size={14} weight="fill" />
                   <span>{detentionCount} at risk</span>
                 </div>
               ) : (
@@ -377,7 +405,7 @@ function IndexPopup() {
                   style={{
                     display: "inline-flex",
                     alignItems: "center",
-                    gap: 4,
+                    gap: 5,
                     backgroundColor: "#ecfdf5",
                     color: "#059669",
                     border: "1px solid #a7f3d0",
@@ -386,8 +414,8 @@ function IndexPopup() {
                     padding: "4px 10px",
                     borderRadius: 20
                   }}>
-                  <span>🛡️</span>
-                  <span>All Safe (≥75%)</span>
+                  <ShieldCheckIcon size={14} weight="fill" />
+                  <span>Safe in all ({cleanSubjects.length})</span>
                 </div>
               )}
             </div>
@@ -405,9 +433,9 @@ function IndexPopup() {
                 <div
                   style={{
                     height: "100%",
-                    width: `${Math.min(100, aggregatePercentage)}%`,
+                    width: `${Math.min(100, overallStats.percentage)}%`,
                     background:
-                      aggregatePercentage >= 75
+                      overallStats.percentage >= 75
                         ? "linear-gradient(90deg, #10b981 0%, #059669 100%)"
                         : "linear-gradient(90deg, #f87171 0%, #ef4444 100%)",
                     borderRadius: 9999,
@@ -423,7 +451,7 @@ function IndexPopup() {
                     bottom: 0,
                     width: 2,
                     backgroundColor: "#0f172a",
-                    opacity: 0.5
+                    opacity: 0.4
                   }}
                 />
               </div>
@@ -437,7 +465,7 @@ function IndexPopup() {
                   marginTop: 3
                 }}>
                 <span>0%</span>
-                <span style={{ color: "#475569", fontWeight: 700 }}>Strict 75% Goal</span>
+                <span style={{ color: "#475569", fontWeight: 700 }}>Strict 75% Rule</span>
                 <span>100%</span>
               </div>
             </div>
@@ -454,30 +482,30 @@ function IndexPopup() {
               <div>
                 <div style={{ fontSize: 10, color: "#64748b", fontWeight: 500 }}>Attended</div>
                 <div style={{ fontSize: 14, fontWeight: 700, color: "#1e293b" }}>
-                  {cleanSubjects.reduce((acc, s) => acc + s.attended, 0)}
+                  {overallStats.attended > 0 ? overallStats.attended : "—"}
                 </div>
               </div>
               <div>
                 <div style={{ fontSize: 10, color: "#64748b", fontWeight: 500 }}>Missed</div>
                 <div style={{ fontSize: 14, fontWeight: 700, color: "#1e293b" }}>
-                  {cleanSubjects.reduce((acc, s) => acc + s.missed, 0)}
+                  {overallStats.missed > 0 ? overallStats.missed : "—"}
                 </div>
               </div>
               <div>
-                <div style={{ fontSize: 10, color: "#64748b", fontWeight: 500 }}>Total Held</div>
+                <div style={{ fontSize: 10, color: "#64748b", fontWeight: 500 }}>Courses</div>
                 <div style={{ fontSize: 14, fontWeight: 700, color: "#1e293b" }}>
-                  {cleanSubjects.reduce((acc, s) => acc + s.total, 0)}
+                  {cleanSubjects.length}
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Search & Filter Segments */}
+          {/* Search Bar & Segmented Filter */}
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             <div style={{ position: "relative" }}>
               <input
                 type="text"
-                placeholder="Search course name..."
+                placeholder="Search course or code (e.g. CS310L)..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 style={{
@@ -501,7 +529,7 @@ function IndexPopup() {
                   fontSize: 12,
                   color: "#94a3b8"
                 }}>
-                🔍
+                <MagnifyingGlassIcon size={14} />
               </span>
             </div>
 
@@ -546,7 +574,7 @@ function IndexPopup() {
             </div>
           </div>
 
-          {/* Subject Cards */}
+          {/* Registered Courses List */}
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {filteredSubjects.map((sub: SubjectAttendance) => {
               const isDeficit = sub.status === "deficit"
@@ -555,7 +583,6 @@ function IndexPopup() {
               const badgeBg = isDeficit ? "#fff1f2" : isBoundary ? "#fffbeb" : "#ecfdf5"
               const badgeColor = isDeficit ? "#be123c" : isBoundary ? "#b45309" : "#047857"
               const badgeBorder = isDeficit ? "#fecdd3" : isBoundary ? "#fde68a" : "#a7f3d0"
-              const icon = isDeficit ? "🚨" : isBoundary ? "⚠️" : "🛡️"
 
               return (
                 <div
@@ -563,16 +590,45 @@ function IndexPopup() {
                   style={{
                     backgroundColor: "#ffffff",
                     borderRadius: 14,
-                    padding: "14px 16px",
+                    padding: "13px 15px",
                     border: "1px solid #e2e8f0",
                     boxShadow: "0 2px 6px -1px rgba(0, 0, 0, 0.03)",
                     display: "flex",
                     flexDirection: "column",
-                    gap: 10
+                    gap: 8
                   }}>
-                  {/* Title & Percentage */}
+                  {/* Course Code, Component & Percentage */}
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
                     <div style={{ flex: 1 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
+                        {sub.courseCode && (
+                          <span
+                            style={{
+                              fontSize: 10,
+                              fontWeight: 700,
+                              color: "#4f46e5",
+                              backgroundColor: "#eef2ff",
+                              padding: "1px 6px",
+                              borderRadius: 6,
+                              letterSpacing: "0.02em"
+                            }}>
+                            {sub.courseCode}
+                          </span>
+                        )}
+                        {sub.component && (
+                          <span
+                            style={{
+                              fontSize: 9,
+                              fontWeight: 600,
+                              color: "#64748b",
+                              backgroundColor: "#f1f5f9",
+                              padding: "1px 5px",
+                              borderRadius: 4
+                            }}>
+                            {sub.component}
+                          </span>
+                        )}
+                      </div>
                       <h4
                         style={{
                           margin: 0,
@@ -584,6 +640,7 @@ function IndexPopup() {
                         {sub.subjectName}
                       </h4>
                     </div>
+
                     <div
                       style={{
                         fontSize: 14,
@@ -595,7 +652,7 @@ function IndexPopup() {
                     </div>
                   </div>
 
-                  {/* Progress Bar with 75% target tick */}
+                  {/* Progress Bar with 75% target marker */}
                   <div
                     style={{
                       position: "relative",
@@ -612,7 +669,6 @@ function IndexPopup() {
                         borderRadius: 9999
                       }}
                     />
-                    {/* Target line */}
                     <div
                       style={{
                         position: "absolute",
@@ -626,7 +682,7 @@ function IndexPopup() {
                     />
                   </div>
 
-                  {/* Action & Stats Row */}
+                  {/* Class counts & Action Recommendation */}
                   <div
                     style={{
                       display: "flex",
@@ -634,8 +690,13 @@ function IndexPopup() {
                       alignItems: "center"
                     }}>
                     <span style={{ fontSize: 11, color: "#64748b", fontWeight: 500 }}>
-                      <strong style={{ color: "#334155" }}>{sub.attended}</strong>/{sub.total} attended
-                      {sub.missed > 0 ? ` (${sub.missed} missed)` : ""}
+                      {sub.total > 0 ? (
+                        <>
+                          <strong style={{ color: "#334155" }}>{sub.attended}</strong>/{sub.total} attended
+                        </>
+                      ) : (
+                        `Attendance: ${sub.percentage}%`
+                      )}
                     </span>
 
                     <span
@@ -652,7 +713,13 @@ function IndexPopup() {
                         borderRadius: 9999,
                         letterSpacing: "-0.01em"
                       }}>
-                      <span>{icon}</span>
+                      {isDeficit ? (
+                        <WarningCircleIcon size={13} weight="fill" />
+                      ) : isBoundary ? (
+                        <WarningIcon size={13} weight="fill" />
+                      ) : (
+                        <ShieldCheckIcon size={13} weight="fill" />
+                      )}
                       <span>{sub.message}</span>
                     </span>
                   </div>

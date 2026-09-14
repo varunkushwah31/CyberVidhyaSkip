@@ -1,35 +1,41 @@
-import type { PlasmoCSConfig } from "plasmo"
-import type { AttendanceStore, SubjectAttendance } from "./types"
+import type { PlasmoCSConfig } from "plasmo";
+
+
+
+import type { AttendanceStore, SubjectAttendance } from "~types";
+
 
 // Plasmo content script configuration
 export const config: PlasmoCSConfig = {
   matches: ["https://*.cybervidya.net/*", "http://*.cybervidya.net/*", "<all_urls>"],
-  all_frames: true, // Crucial for ERP portals that render content inside iframes
+  all_frames: true,
   run_at: "document_idle"
 }
 
-const BADGE_CLASS = "cv-attendance-calc-badge"
+const BADGE_CLASS = "cv-attendance-badge"
 
 console.log(
-  "[CyberVidhya Attendance] Content script loaded on:",
+  "[CyberVidhya Attendance] Content script initialized on:",
   window.location.href,
   "| isTopFrame:",
   window === window.top
 )
 
-interface ColumnMapping {
-  subjectIdx: number
-  codeIdx: number
-  componentIdx: number
-  attendedIdx: number
-  missedIdx: number
-  totalIdx: number
-  percentIdx: number
-}
+// In-memory cache of courses fetched from CyberVidhya API
+const apiCourseCache = new Map<
+  string,
+  {
+    courseCode: string
+    courseName: string
+    componentName: string
+    presentClasses: number
+    totalClasses: number
+    percentage: number
+  }
+>()
 
 /**
- * Checks if a string represents a calendar date (e.g. 01/09/2026 or 2026-09-01).
- * Never treat dates as course attendance numbers or subject names!
+ * Checks if a string is a calendar date (DD/MM/YYYY etc.).
  */
 function isDateString(str: string): boolean {
   return (
@@ -39,52 +45,7 @@ function isDateString(str: string): boolean {
 }
 
 /**
- * Checks if a table is a daywise/lecture-wise attendance history log.
- * These tables list dates (13/08/2026, 14/08/2026, etc.) and MUST be skipped!
- */
-function isLectureWiseHistoryTable(table: HTMLTableElement): boolean {
-  const headerText = Array.from(table.querySelectorAll("th, thead td"))
-    .map((c) => (c.textContent || "").toLowerCase())
-    .join(" ")
-
-  if (
-    headerText.includes("date") ||
-    headerText.includes("time slot") ||
-    headerText.includes("lecture type") ||
-    headerText.includes("day")
-  ) {
-    return true
-  }
-
-  // Check if inside a "Lecture Wise Attendance Details" modal
-  const parentModal = table.closest(".modal, [class*='modal'], [class*='dialog'], [class*='popup']")
-  if (parentModal) {
-    const modalTitle =
-      parentModal.querySelector(".modal-title, h1, h2, h3, h4, h5, [class*='title']")
-        ?.textContent || ""
-    if (modalTitle.toLowerCase().includes("lecture wise")) {
-      return true
-    }
-  }
-
-  // Check first few rows for date strings in the 2nd column
-  const firstDataRows = table.querySelectorAll("tbody tr, tr")
-  let dateMatches = 0
-  for (let i = 0; i < Math.min(4, firstDataRows.length); i++) {
-    const row = firstDataRows[i]
-    if (isDateString(row.textContent || "")) {
-      dateMatches++
-    }
-  }
-  if (dateMatches >= 2) {
-    return true
-  }
-
-  return false
-}
-
-/**
- * Safely extracts text from an element without including any injected badges.
+ * Safely extracts text from an element without badge text pollution.
  */
 function cleanElementText(el: HTMLElement): string {
   const clone = el.cloneNode(true) as HTMLElement
@@ -93,90 +54,17 @@ function cleanElementText(el: HTMLElement): string {
 }
 
 /**
- * Resolves column indices specifically for Subject/Course Attendance tables.
- */
-function resolveSubjectColumnIndices(table: HTMLTableElement): ColumnMapping {
-  const mapping: ColumnMapping = {
-    subjectIdx: -1,
-    codeIdx: -1,
-    componentIdx: -1,
-    attendedIdx: -1,
-    missedIdx: -1,
-    totalIdx: -1,
-    percentIdx: -1
-  }
-
-  const theadRows = table.querySelectorAll("thead tr")
-  const headerRow = theadRows.length > 0 ? theadRows[theadRows.length - 1] : table.querySelector("tr")
-  if (!headerRow) return mapping
-
-  const cells = headerRow.querySelectorAll<HTMLTableCellElement>("th, td")
-
-  cells.forEach((cell, index) => {
-    const text = (cell.textContent || "").toLowerCase().trim()
-
-    if (text.includes("course code") || text.includes("sub code") || text === "code") {
-      mapping.codeIdx = index
-    } else if (
-      text.includes("course name") ||
-      text.includes("subject name") ||
-      text.includes("course") ||
-      text.includes("subject") ||
-      text.includes("paper")
-    ) {
-      // Prioritize course name over code
-      if (!text.includes("code") || mapping.subjectIdx === -1) {
-        mapping.subjectIdx = index
-      }
-    } else if (text.includes("component") || text.includes("type")) {
-      mapping.componentIdx = index
-    } else if (
-      text.includes("attended") ||
-      text.includes("present") ||
-      text.includes("attnd") ||
-      text === "p"
-    ) {
-      mapping.attendedIdx = index
-    } else if (
-      text.includes("absent") ||
-      text.includes("missed") ||
-      text === "a"
-    ) {
-      mapping.missedIdx = index
-    } else if (
-      text.includes("lecture") ||
-      text.includes("total") ||
-      text.includes("conducted") ||
-      text.includes("held") ||
-      text.includes("delivered") ||
-      text.includes("max")
-    ) {
-      mapping.totalIdx = index
-    } else if (text.includes("%") || text.includes("percentage") || text.includes("att %")) {
-      mapping.percentIdx = index
-    }
-  })
-
-  // Fallback: If no subject name column found, try column 1 or 2
-  if (mapping.subjectIdx === -1 && cells.length >= 3) {
-    mapping.subjectIdx = mapping.codeIdx === 1 ? 2 : 1
-  }
-
-  return mapping
-}
-
-/**
  * Strict 75% Attendance Formula
  */
 function compute75Metrics(attended: number, total: number) {
   const percentage = Number(((attended / total) * 100).toFixed(1))
   let status: "deficit" | "surplus" | "boundary"
-  let actionCount = 0
-  let message = ""
+  let actionCount: number
+  let message: string
   let badgeStyles: { bg: string; text: string; border: string; icon: string }
 
   if (4 * attended < 3 * total) {
-    // Deficit: Below 75%
+    // Deficit (below 75%)
     actionCount = 3 * total - 4 * attended
     status = "deficit"
     message = `Attend next ${actionCount}`
@@ -187,7 +75,7 @@ function compute75Metrics(attended: number, total: number) {
       icon: "🚨"
     }
   } else {
-    // Surplus: 75% or higher
+    // Surplus (at or above 75%)
     actionCount = Math.floor((4 * attended - 3 * total) / 3)
     if (actionCount > 0) {
       status = "surplus"
@@ -214,12 +102,13 @@ function compute75Metrics(attended: number, total: number) {
 }
 
 /**
- * Injects or updates a clean, modern chip badge in the target cell.
+ * Injects or updates a clean, modern chip badge into a table cell.
  */
 function injectBadge(
   container: HTMLElement,
   message: string,
-  styles: { bg: string; text: string; border: string; icon: string }
+  styles: { bg: string; text: string; border: string; icon: string },
+  tooltip?: string
 ): void {
   let badge = container.querySelector<HTMLSpanElement>(`.${BADGE_CLASS}`)
   if (!badge) {
@@ -236,7 +125,7 @@ function injectBadge(
     badge.style.lineHeight = "1.3"
     badge.style.whiteSpace = "nowrap"
     badge.style.verticalAlign = "middle"
-    badge.style.boxShadow = "0 1px 2px rgba(0, 0, 0, 0.05)"
+    badge.style.boxShadow = "0 1px 2px rgba(0, 0, 0, 0.04)"
     badge.style.cursor = "default"
     badge.style.transition = "all 0.15s ease"
     container.appendChild(badge)
@@ -246,119 +135,274 @@ function injectBadge(
   badge.style.backgroundColor = styles.bg
   badge.style.color = styles.text
   badge.style.border = `1px solid ${styles.border}`
+  if (tooltip) {
+    badge.title = tooltip
+  }
 }
 
 /**
- * Strategy 1: Scrapes main Subject Attendance Tables.
- * Strictly skips daywise / lecturewise tables!
+ * Helper to retrieve CyberVidhya auth token from localStorage or sessionStorage.
  */
-function scrapeSubjectTables(): SubjectAttendance[] {
+function getCyberVidhyaToken(): string {
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i) || ""
+      const val = localStorage.getItem(key) || ""
+
+      if (
+        key.toLowerCase() === "token" ||
+        key.toLowerCase() === "auth_token" ||
+        key.toLowerCase() === "access_token" ||
+        key.toLowerCase() === "jwt"
+      ) {
+        return val.replace(/^["']|["']$/g, "")
+      }
+
+      if (val.startsWith("{") || val.startsWith("[")) {
+        try {
+          const parsed = JSON.parse(val)
+          if (parsed.token) return parsed.token
+          if (parsed.accessToken) return parsed.accessToken
+          if (parsed.access_token) return parsed.access_token
+          if (parsed.data?.token) return parsed.data.token
+          if (parsed.user?.token) return parsed.user.token
+        } catch {}
+      }
+    }
+
+    for (let i = 0; i < sessionStorage.length; i++) {
+      const key = sessionStorage.key(i) || ""
+      const val = sessionStorage.getItem(key) || ""
+      if (key.toLowerCase().includes("token")) {
+        return val.replace(/^["']|["']$/g, "")
+      }
+    }
+  } catch (e) {
+    console.debug("[CyberVidhya Attendance] Token retrieval error:", e)
+  }
+  return ""
+}
+
+/**
+ * Fetches attendance data directly from CyberVidhya API.
+ */
+async function fetchCyberVidhyaApiData(): Promise<boolean> {
+  if (!window.location.hostname.includes("cybervidya.net")) {
+    return false
+  }
+
+  const token = getCyberVidhyaToken()
+  const headers: Record<string, string> = {}
+  if (token) {
+    headers["Authorization"] = `GlobalEducation ${token}`
+  }
+
+  const endpoints = [
+    "/api/attendance/course/component/student",
+    "/api/student/dashboard/registered-courses"
+  ]
+
+  for (const endpoint of endpoints) {
+    try {
+      const res = await fetch(endpoint, {
+        headers,
+        credentials: "include"
+      })
+
+      if (!res.ok) continue
+
+      const json = await res.json()
+      const list =
+        json?.data?.attendanceCourseComponentInfoList ||
+        json?.data?.registeredCourseList ||
+        json?.data
+
+      if (Array.isArray(list) && list.length > 0) {
+        console.log(`[CyberVidhya Attendance] Received ${list.length} courses from ${endpoint}`)
+
+        list.forEach((item: any) => {
+          const courseCode = (item.courseCode || "").trim().toUpperCase()
+          const courseName = (item.courseName || "").trim()
+          const componentName = (item.componentName || item.component || "THEORY").trim().toUpperCase()
+
+          let presentClasses = 0
+          let totalClasses = 0
+
+          if (Array.isArray(item.attendanceComponentInfoList)) {
+            item.attendanceComponentInfoList.forEach((comp: any) => {
+              presentClasses += comp.presentClasses || comp.attendedClasses || 0
+              totalClasses += comp.totalClasses || comp.conductedClasses || 0
+            })
+          } else {
+            presentClasses = item.presentClasses || item.attendedClasses || item.attended || 0
+            totalClasses = item.totalClasses || item.conductedClasses || item.total || 0
+          }
+
+          const percentage =
+            totalClasses > 0
+              ? Number(((presentClasses / totalClasses) * 100).toFixed(1))
+              : item.percentage || 0
+
+          if (courseCode) {
+            const entry = {
+              courseCode,
+              courseName,
+              componentName,
+              presentClasses,
+              totalClasses,
+              percentage
+            }
+            apiCourseCache.set(courseCode, entry)
+            apiCourseCache.set(`${courseCode}_${componentName}`, entry)
+          }
+        })
+
+        return true
+      }
+    } catch (err) {
+      console.debug(`[CyberVidhya Attendance] Fetch failed for ${endpoint}:`, err)
+    }
+  }
+
+  return false
+}
+
+/**
+ * Scrapes the "Current Registered Courses" table directly on the General Dashboard.
+ * Injects "Can miss X" or "Attend next Y" badges directly on the dashboard table!
+ */
+function processGeneralDashboardTable(): SubjectAttendance[] {
   const tables = document.querySelectorAll<HTMLTableElement>("table")
   const extracted: SubjectAttendance[] = []
 
   tables.forEach((table) => {
-    // 1. Skip lecture-wise date tables!
-    if (isLectureWiseHistoryTable(table)) {
+    const headerCells = Array.from(table.querySelectorAll("th, thead td"))
+    const headerTexts = headerCells.map((c) => (c.textContent || "").toLowerCase().trim())
+    const headerJoined = headerTexts.join(" ")
+
+    // Strictly skip lecture-wise date tables
+    if (
+      headerJoined.includes("time slot") ||
+      headerJoined.includes("lecture type") ||
+      headerJoined.includes("date")
+    ) {
       return
     }
 
-    const mapping = resolveSubjectColumnIndices(table)
+    // Must be the courses table
+    if (!headerJoined.includes("course") && !headerJoined.includes("attendance")) {
+      return
+    }
+
+    // Map column indices
+    let codeIdx = -1
+    let nameIdx = -1
+    let compIdx = -1
+    let percentIdx = -1
+
+    headerCells.forEach((cell, idx) => {
+      const text = (cell.textContent || "").toLowerCase().trim()
+      if (text.includes("course code") || text === "code") {
+        codeIdx = idx
+      } else if (text.includes("course name") || text.includes("subject")) {
+        nameIdx = idx
+      } else if (text.includes("component")) {
+        compIdx = idx
+      } else if (text.includes("attendance") || text.includes("%")) {
+        percentIdx = idx
+      }
+    })
+
+    // Fallbacks if headers couldn't be matched by name
+    if (codeIdx === -1 && headerCells.length >= 8) codeIdx = 1
+    if (nameIdx === -1 && headerCells.length >= 8) nameIdx = 2
+    if (compIdx === -1 && headerCells.length >= 8) compIdx = 4
+    if (percentIdx === -1 && headerCells.length >= 8) percentIdx = 8
+
     const rows = table.querySelectorAll<HTMLTableRowElement>("tbody tr, tr")
 
     rows.forEach((row) => {
-      // Ignore header rows
       if (row.querySelector("th") && !row.querySelector("td")) return
 
       const cells = Array.from(row.querySelectorAll<HTMLTableCellElement>("td"))
-      if (cells.length < 3) return
+      if (cells.length < 4) return
 
-      // Skip row if it contains dates
-      const fullRowText = row.textContent || ""
-      if (isDateString(fullRowText) && !fullRowText.toLowerCase().includes("course")) {
-        return
-      }
+      const codeCell = codeIdx >= 0 ? cells[codeIdx] : null
+      const nameCell = nameIdx >= 0 ? cells[nameIdx] : null
+      const compCell = compIdx >= 0 ? cells[compIdx] : null
+      const percentCell = percentIdx >= 0 ? cells[percentIdx] : null
 
-      let attended = NaN
-      let total = NaN
-      let missed = NaN
-      let subjectName = ""
-      let targetCell: HTMLTableCellElement = cells[0]
+      if (!nameCell || !percentCell) return
 
-      // Extract using header mapping
-      if (mapping.attendedIdx >= 0 && cells[mapping.attendedIdx]) {
-        attended = parseInt(cells[mapping.attendedIdx].textContent?.trim() || "", 10)
-      }
+      const courseCode = codeCell ? cleanElementText(codeCell).toUpperCase() : ""
+      const courseName = cleanElementText(nameCell)
+      const component = compCell ? cleanElementText(compCell).toUpperCase() : "THEORY"
+      const percentText = cleanElementText(percentCell)
 
-      if (mapping.totalIdx >= 0 && cells[mapping.totalIdx]) {
-        total = parseInt(cells[mapping.totalIdx].textContent?.trim() || "", 10)
-      }
+      if (!courseName || isDateString(courseName)) return
 
-      if (mapping.missedIdx >= 0 && cells[mapping.missedIdx]) {
-        missed = parseInt(cells[mapping.missedIdx].textContent?.trim() || "", 10)
-      }
+      // Parse percentage from cell (e.g. "94 %")
+      const parsedPercent = Number.parseFloat(
+        percentText.replace(/[^\d.]/g, "")
+      )
 
-      // If total was not extracted, but attended and missed exist:
-      if (Number.isNaN(total) && !Number.isNaN(attended) && !Number.isNaN(missed)) {
-        total = attended + missed
-      }
+      // Check if we have exact (attended, total) data from the API cache
+      const cached =
+        apiCourseCache.get(`${courseCode}_${component}`) || apiCourseCache.get(courseCode)
 
-      // If total & attended exist but missed does not:
-      if (!Number.isNaN(total) && !Number.isNaN(attended) && Number.isNaN(missed)) {
-        missed = Math.max(0, total - attended)
-      }
+      let attended = 0
+      let total = 0
+      let percentage = Number.isNaN(parsedPercent) ? 0 : parsedPercent
+      let actionCount = 0
+      let status: "deficit" | "surplus" | "boundary"
+      let message: string
+      let badgeStyles: { bg: string; text: string; border: string; icon: string }
 
-      // Extract subject name
-      if (mapping.subjectIdx >= 0 && cells[mapping.subjectIdx]) {
-        targetCell = cells[mapping.subjectIdx]
-        subjectName = cleanElementText(targetCell)
-      }
-
-      // Fallback subject cell if empty or pure number:
-      if (!subjectName || /^\d+$/.test(subjectName)) {
-        for (const cell of cells) {
-          const txt = cleanElementText(cell)
-          // Find text with letters that is NOT a date, NOT a number, and NOT header labels
-          if (
-            txt.length > 3 &&
-            /[a-zA-Z]{3,}/.test(txt) &&
-            !isDateString(txt) &&
-            !/^(regular|theory|practical|present|absent)$/i.test(txt)
-          ) {
-            subjectName = txt
-            targetCell = cell
-            break
-          }
+      if (cached && cached.totalClasses > 0) {
+        attended = cached.presentClasses
+        total = cached.totalClasses
+        const metrics = compute75Metrics(attended, total)
+        percentage = metrics.percentage
+        status = metrics.status
+        actionCount = metrics.actionCount
+        message = metrics.message
+        badgeStyles = metrics.badgeStyles
+      } else {
+        // Fallback calculation directly from percentage column
+        if (percentage < 75) {
+          status = "deficit"
+          message = `Below 75% (${percentage}%)`
+          badgeStyles = { bg: "#fff1f2", text: "#be123c", border: "#fecdd3", icon: "🚨" }
+        } else if (percentage === 75) {
+          status = "boundary"
+          message = "Don't miss!"
+          badgeStyles = { bg: "#fffbeb", text: "#b45309", border: "#fde68a", icon: "⚠️" }
+        } else {
+          status = "surplus"
+          message = `Safe (${percentage}%)`
+          badgeStyles = { bg: "#ecfdf5", text: "#047857", border: "#a7f3d0", icon: "🛡️" }
         }
       }
 
-      // Validation: must be a genuine course
-      if (
-        Number.isNaN(attended) ||
-        Number.isNaN(total) ||
-        total <= 0 ||
-        attended < 0 ||
-        attended > total ||
-        !subjectName ||
-        isDateString(subjectName)
-      ) {
-        return
-      }
-
-      const metrics = compute75Metrics(attended, total)
-
-      // Inject visual chip next to course name
-      injectBadge(targetCell, metrics.message, metrics.badgeStyles)
+      // INJECT BADGE DIRECTLY ON THE GENERAL DASHBOARD TABLE (in Attendance % column)
+      const tooltip =
+        total > 0
+          ? `${attended} attended / ${total} total classes (${percentage}%)`
+          : `Current attendance: ${percentage}%`
+      injectBadge(percentCell, message, badgeStyles, tooltip)
 
       extracted.push({
-        id: `${subjectName}-${total}`,
-        subjectName,
+        id: `${courseCode || courseName}-${component}`,
+        courseCode,
+        subjectName: courseName,
+        component,
         attended,
-        missed,
+        missed: Math.max(0, total - attended),
         total,
-        percentage: metrics.percentage,
-        status: metrics.status,
-        actionCount: metrics.actionCount,
-        message: metrics.message
+        percentage,
+        status,
+        actionCount,
+        message
       })
     })
   })
@@ -367,12 +411,7 @@ function scrapeSubjectTables(): SubjectAttendance[] {
 }
 
 /**
- * Strategy 2: Scrapes the "Lecture Wise Attendance Details" Modal Summary Header.
- * When a user opens a subject modal, the header explicitly displays:
- * "Course Name : Theory of Computation"
- * "Present : 17"
- * "Lecture : 18"
- * "Attendance % : 94 %"
+ * Scrapes the modal header if the user clicked into a specific course details view.
  */
 function scrapeModalHeader(): SubjectAttendance | null {
   const modal = document.querySelector(".modal, [class*='modal'], [class*='dialog'], [class*='popup']")
@@ -386,21 +425,21 @@ function scrapeModalHeader(): SubjectAttendance | null {
     return null
   }
 
-  // Regex extract details from modal summary fields
-  const courseMatch = modalText.match(/Course Name\s*:\s*([^:\n\r]+?)(?=\s*(?:Component Name|Course Section|Present|Lecture|$))/i)
-  const presentMatch = modalText.match(/Present\s*:\s*(\d+)/i)
-  const lectureMatch = modalText.match(/Lecture\s*:\s*(\d+)/i)
+  const courseMatch = new RegExp(
+    /Course Name\s*:\s*([^:\n\r]+?)(?=\s*(?:Component Name|Course Section|Present|Lecture|$))/i
+  ).exec(modalText)
+  const presentMatch = new RegExp(/Present\s*:\s*(\d+)/i).exec(modalText)
+  const lectureMatch = new RegExp(/Lecture\s*:\s*(\d+)/i).exec(modalText)
 
   if (courseMatch && presentMatch && lectureMatch) {
     const subjectName = courseMatch[1].trim()
-    const attended = parseInt(presentMatch[1], 10)
-    const total = parseInt(lectureMatch[1], 10)
+    const attended = Number.parseInt(presentMatch[1], 10)
+    const total = Number.parseInt(lectureMatch[1], 10)
 
     if (total > 0 && attended <= total && subjectName && !isDateString(subjectName)) {
       const missed = Math.max(0, total - attended)
       const metrics = compute75Metrics(attended, total)
 
-      // Inject badge into modal header
       const headerBlock = modal.querySelector(".modal-body, [class*='body'], [class*='header'], table")?.parentElement
       const targetHeader = modal.querySelector("h1, h2, h3, h4, h5, [class*='title']") || headerBlock
       if (targetHeader) {
@@ -425,136 +464,48 @@ function scrapeModalHeader(): SubjectAttendance | null {
 }
 
 /**
- * Strategy 3: Directly calls CyberVidhya's internal API.
- * Returns the exact, verified course attendance list across all subjects!
+ * Main coordinator.
  */
-async function fetchCyberVidhyaApi(): Promise<SubjectAttendance[]> {
-  if (!window.location.hostname.includes("cybervidya.net")) {
-    return []
-  }
+export async function processAttendance(): Promise<number> {
+  // 1. Fetch API data in background to populate exact class counts
+  await fetchCyberVidhyaApiData()
 
-  try {
-    let token = ""
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i) || ""
-      const val = localStorage.getItem(key) || ""
-      if (key.toLowerCase().includes("token") || key.toLowerCase().includes("auth")) {
-        token = val.replace(/^["']|["']$/g, "")
-        break
-      }
-      try {
-        const parsed = JSON.parse(val)
-        if (parsed.token || parsed.accessToken || parsed.access_token) {
-          token = parsed.token || parsed.accessToken || parsed.access_token
-          break
-        }
-      } catch {}
-    }
+  // 2. Process the General Dashboard Table
+  const dashboardSubjects = processGeneralDashboardTable()
 
-    const headers: Record<string, string> = {}
-    if (token) {
-      headers["Authorization"] = `GlobalEducation ${token}`
-    }
-
-    const res = await fetch("/api/attendance/course/component/student", {
-      headers,
-      credentials: "include"
-    })
-
-    if (!res.ok) return []
-
-    const json = await res.json()
-    const studentData = json?.data
-    const list = studentData?.attendanceCourseComponentInfoList
-
-    if (!Array.isArray(list) || list.length === 0) return []
-
-    console.log("[CyberVidhya Attendance] API returned courses:", list.length)
-
-    const results: SubjectAttendance[] = []
-    list.forEach((item: any) => {
-      const subjectName = item.courseName || item.courseCode
-      if (!subjectName || isDateString(subjectName)) return
-
-      let attended = 0
-      let total = 0
-
-      if (Array.isArray(item.attendanceComponentInfoList)) {
-        item.attendanceComponentInfoList.forEach((comp: any) => {
-          attended += comp.presentClasses || comp.attendedClasses || 0
-          total += comp.totalClasses || comp.conductedClasses || 0
-        })
-      } else {
-        attended = item.presentClasses || item.attendedClasses || item.attended || 0
-        total = item.totalClasses || item.conductedClasses || item.total || 0
-      }
-
-      if (total <= 0 || attended > total) return
-
-      const missed = Math.max(0, total - attended)
-      const metrics = compute75Metrics(attended, total)
-
-      results.push({
-        id: `${subjectName}-${total}`,
-        subjectName,
-        attended,
-        missed,
-        total,
-        percentage: metrics.percentage,
-        status: metrics.status,
-        actionCount: metrics.actionCount,
-        message: metrics.message
-      })
-    })
-
-    return results
-  } catch (err) {
-    console.debug("[CyberVidhya Attendance] API call skipped:", err)
-    return []
-  }
-}
-
-/**
- * Main coordinator function.
- */
-export async function processAttendanceTable(): Promise<number> {
-  const subjectMap = new Map<string, SubjectAttendance>()
-
-  // 1. Try CyberVidhya internal API first for 100% accurate subjects
-  const apiSubjects = await fetchCyberVidhyaApi()
-  apiSubjects.forEach((s) => subjectMap.set(s.subjectName, s))
-
-  // 2. Scrape subject tables from DOM
-  const tableSubjects = scrapeSubjectTables()
-  tableSubjects.forEach((s) => {
-    if (!subjectMap.has(s.subjectName)) {
-      subjectMap.set(s.subjectName, s)
-    }
-  })
-
-  // 3. If modal header is open, include or update that subject
+  // 3. Process modal if open
   const modalSubject = scrapeModalHeader()
   if (modalSubject) {
-    subjectMap.set(modalSubject.subjectName, modalSubject)
+    const existingIdx = dashboardSubjects.findIndex((s) => s.subjectName === modalSubject.subjectName)
+    if (existingIdx >= 0) {
+      dashboardSubjects[existingIdx] = modalSubject
+    } else {
+      dashboardSubjects.push(modalSubject)
+    }
   }
 
-  const subjects = Array.from(subjectMap.values())
+  console.log(`[CyberVidhya Attendance] Synced ${dashboardSubjects.length} subjects`)
 
-  console.log(`[CyberVidhya Attendance] Final subject-wise count: ${subjects.length}`)
-
-  // Store in chrome.storage.local
-  if (subjects.length > 0 && typeof chrome !== "undefined" && chrome.storage?.local) {
-    const totalAttended = subjects.reduce((acc, s) => acc + s.attended, 0)
-    const totalMissed = subjects.reduce((acc, s) => acc + s.missed, 0)
-    const totalClasses = subjects.reduce((acc, s) => acc + s.total, 0)
+  // 4. Save to chrome.storage.local
+  if (dashboardSubjects.length > 0 && typeof chrome !== "undefined" && chrome.storage?.local) {
+    const totalAttended = dashboardSubjects.reduce((acc, s) => acc + s.attended, 0)
+    const totalMissed = dashboardSubjects.reduce((acc, s) => acc + s.missed, 0)
+    const totalClasses = dashboardSubjects.reduce((acc, s) => acc + s.total, 0)
     const overallPercentage =
-      totalClasses > 0 ? Number(((totalAttended / totalClasses) * 100).toFixed(1)) : 0
-    const detentionCount = subjects.filter((s) => s.status === "deficit").length
+      totalClasses > 0
+        ? Number(((totalAttended / totalClasses) * 100).toFixed(1))
+        : Number(
+            (
+              dashboardSubjects.reduce((acc, s) => acc + s.percentage, 0) /
+              dashboardSubjects.length
+            ).toFixed(1)
+          )
+    const detentionCount = dashboardSubjects.filter((s) => s.status === "deficit").length
 
     const payload: AttendanceStore = {
       lastUpdated: Date.now(),
       url: window.location.href,
-      subjects,
+      subjects: dashboardSubjects,
       overall: {
         totalAttended,
         totalMissed,
@@ -567,14 +518,14 @@ export async function processAttendanceTable(): Promise<number> {
     chrome.storage.local.set({ attendanceData: payload })
   }
 
-  return subjects.length
+  return dashboardSubjects.length
 }
 
-// Listen for popup messages
+// Runtime message listener for on-demand scan
 if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
   chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
     if (request.action === "SCAN_NOW") {
-      processAttendanceTable().then((count) => {
+      processAttendance().then((count) => {
         sendResponse({ success: true, count, url: window.location.href })
       })
       return true
@@ -582,12 +533,12 @@ if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
   })
 }
 
-// Debounced DOM observer
+// Debounce DOM observer
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
 function debouncedProcess(): void {
   if (debounceTimer) clearTimeout(debounceTimer)
   debounceTimer = setTimeout(() => {
-    processAttendanceTable()
+    processAttendance()
   }, 200)
 }
 
@@ -609,20 +560,21 @@ function initObserver(): void {
   })
 }
 
-// Lifecycle execution triggers
+// Execution triggers
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", () => {
-    processAttendanceTable()
+    processAttendance()
     initObserver()
   })
 } else {
-  processAttendanceTable()
+  processAttendance()
   initObserver()
 }
 
 window.addEventListener("load", () => {
-  processAttendanceTable()
+  processAttendance()
 })
 
-setTimeout(processAttendanceTable, 800)
-setTimeout(processAttendanceTable, 2000)
+setTimeout(processAttendance, 600)
+setTimeout(processAttendance, 1500)
+setTimeout(processAttendance, 3000)
