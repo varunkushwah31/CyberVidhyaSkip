@@ -13,6 +13,7 @@ export interface SubjectAttendance {
   status: AttendanceStatus
   actionCount: number
   message: string
+  adjusted?: number
 }
 
 export interface AttendanceMetrics {
@@ -54,4 +55,5 @@ export interface CachedCourse {
   presentClasses: number
   totalClasses: number
   percentage: number
+  adjustedClasses?: number
 }

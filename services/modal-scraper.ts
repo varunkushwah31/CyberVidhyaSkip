@@ -244,10 +244,12 @@ interface ModalAttendanceData {
   component: string
   attended: number
   total: number
+  adjusted?: number
 }
 
 /**
  * Parses attendance values from modal text without backtracking regular expressions.
+ * Ensures students marked "ADJUSTED" are counted as present.
  */
 function parseModalAttendanceDetails(modalText: string): ModalAttendanceData | null {
   const lowerText = modalText.toLowerCase()
@@ -255,30 +257,85 @@ function parseModalAttendanceDetails(modalText: string): ModalAttendanceData | n
     return null
   }
 
-  const subjectName = extractModalField(modalText, "Course Name", [
+  const delimiters = [
     "Component Name",
     "Course Section",
+    "Section",
     "Present",
-    "Lecture"
-  ])
-  const rawComp = extractModalField(modalText, "Component Name", [
-    "Course Section",
-    "Present",
-    "Lecture"
-  ])
-  const component = rawComp ? rawComp.toUpperCase() : "THEORY"
-  const attended = extractModalNumber(modalText, "Present")
-  const total = extractModalNumber(modalText, "Lecture")
+    "Absent",
+    "Adjusted",
+    "Adjustment",
+    "Adjust",
+    "Lecture",
+    "Total"
+  ]
 
-  if (!subjectName || attended === null || total === null) {
+  const subjectName = extractModalField(modalText, "Course Name", delimiters)
+  const rawComp = extractModalField(modalText, "Component Name", delimiters)
+  const component = rawComp ? rawComp.toUpperCase() : "THEORY"
+
+  const present = extractModalNumber(modalText, "Present")
+  const absent = extractModalNumber(modalText, "Absent")
+  const adjusted =
+    extractModalNumber(modalText, "Adjusted") ??
+    extractModalNumber(modalText, "Adjustment") ??
+    extractModalNumber(modalText, "Adjust") ??
+    0
+
+  const total =
+    extractModalNumber(modalText, "Lecture") ??
+    extractModalNumber(modalText, "Total Lecture") ??
+    extractModalNumber(modalText, "Total") ??
+    extractModalNumber(modalText, "Conducted")
+
+  if (!subjectName || present === null || total === null) {
     return null
+  }
+
+  // Students marked ADJUSTED are counted as present
+  let attended = present + adjusted
+  if (adjusted === 0 && absent !== null && total > present + absent) {
+    attended = total - absent
   }
 
   if (total <= 0 || attended > total) {
     return null
   }
 
-  return { subjectName, component, attended, total }
+  return { subjectName, component, attended, total, adjusted }
+}
+
+/**
+ * Parses lecture-wise date table rows inside the modal to tally Present, Absent, and Adjusted counts.
+ */
+function parseModalLectureTable(
+  modal: HTMLElement
+): { present: number; adjusted: number; absent: number; total: number } | null {
+  const rows = modal.querySelectorAll<HTMLTableRowElement>("tbody tr, table tr")
+  if (rows.length === 0) return null
+
+  let present = 0
+  let adjusted = 0
+  let absent = 0
+
+  rows.forEach((row) => {
+    if (row.querySelector("th") && !row.querySelector("td")) return
+    const text = cleanElementText(row).toUpperCase()
+    if (!text) return
+
+    if (text.includes("ADJUSTED") || text.includes("ON DUTY") || text.includes(" OD ")) {
+      adjusted++
+    } else if (text.includes("PRESENT")) {
+      present++
+    } else if (text.includes("ABSENT")) {
+      absent++
+    }
+  })
+
+  const total = present + adjusted + absent
+  if (total === 0) return null
+
+  return { present, adjusted, absent, total }
 }
 
 /**
@@ -300,7 +357,7 @@ function injectModalHeaderBadge(
  * Creates SubjectAttendance record and persists exact metrics into cache.
  */
 function createAttendanceRecord(data: ModalAttendanceData): SubjectAttendance {
-  const { subjectName, component, attended, total } = data
+  const { subjectName, component, attended, total, adjusted } = data
   const missed = Math.max(0, total - attended)
   const metrics = compute75Metrics(attended, total)
 
@@ -315,7 +372,8 @@ function createAttendanceRecord(data: ModalAttendanceData): SubjectAttendance {
     componentName: component,
     presentClasses: attended,
     totalClasses: total,
-    percentage: metrics.percentage
+    percentage: metrics.percentage,
+    adjustedClasses: adjusted
   }
   cacheCourseData(entry)
 
@@ -330,13 +388,14 @@ function createAttendanceRecord(data: ModalAttendanceData): SubjectAttendance {
     percentage: metrics.percentage,
     status: metrics.status,
     actionCount: metrics.actionCount,
-    message: metrics.message
+    message: metrics.message,
+    adjusted
   }
 }
 
 /**
  * Passively scrapes the modal header when a user opens "Lecture Wise Attendance Details".
- * Captures exact counts (Present & Lecture) and injects a clean status badge into the header.
+ * Captures exact counts (Present, Adjusted, & Lecture) and injects a clean status badge into the header.
  */
 export function scrapeModalHeader(): SubjectAttendance | null {
   const modal = getVisibleAttendanceModal()
@@ -346,9 +405,21 @@ export function scrapeModalHeader(): SubjectAttendance | null {
   const data = parseModalAttendanceDetails(modalText)
   if (!data) return null
 
+  // If modal has a lecture table with rows, verify/enhance attended with exact counts
+  const tableCounts = parseModalLectureTable(modal)
+  if (tableCounts && tableCounts.total >= data.total) {
+    const tableAttended = tableCounts.present + tableCounts.adjusted
+    if (tableAttended > data.attended) {
+      data.attended = tableAttended
+      data.total = tableCounts.total
+      data.adjusted = tableCounts.adjusted
+    }
+  }
+
   const metrics = compute75Metrics(data.attended, data.total)
   injectModalHeaderBadge(modal, metrics.message, metrics.badgeStyles)
 
   return createAttendanceRecord(data)
 }
+
 

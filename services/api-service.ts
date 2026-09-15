@@ -77,6 +77,54 @@ export function findAuthToken(): string {
 }
 
 /**
+ * Extracts class counts from API response item, ensuring students marked "ADJUSTED"
+ * are counted as present.
+ */
+function extractClassCounts(item: any): {
+  presentClasses: number
+  totalClasses: number
+  percentage: number
+  adjustedClasses: number
+} {
+  const rawPresent = item.numberOfPresent ?? item.presentClasses ?? item.attendedClasses ?? 0
+  const totalClasses = item.numberOfPeriods ?? item.totalClasses ?? item.conductedClasses ?? 0
+  const rawAbsent = item.numberOfAbsent ?? item.absentClasses ?? item.missedClasses ?? 0
+  const adjusted =
+    item.numberOfAdjusted ??
+    item.numberOfAdjustment ??
+    item.numberOfAdjust ??
+    item.adjustedClasses ??
+    item.adjustedPeriods ??
+    item.adjusted ??
+    item.adjustment ??
+    item.totalAdjusted ??
+    item.onDuty ??
+    item.od ??
+    0
+
+  // Students marked ADJUSTED are counted as present
+  let presentClasses = rawPresent + adjusted
+
+  if (adjusted === 0 && totalClasses > 0 && rawAbsent > 0 && totalClasses > rawPresent + rawAbsent) {
+    presentClasses = totalClasses - rawAbsent
+  }
+
+  const rawPercent = item.presentPercentage ?? item.percentage
+  if (typeof rawPercent === "number" && totalClasses > 0) {
+    const percentAttended = Math.round((rawPercent / 100) * totalClasses)
+    if (percentAttended > presentClasses) {
+      presentClasses = percentAttended
+    }
+  }
+
+  const percentage =
+    rawPercent ??
+    (totalClasses > 0 ? Number(((presentClasses / totalClasses) * 100).toFixed(1)) : 0)
+
+  return { presentClasses, totalClasses, percentage, adjustedClasses: adjusted }
+}
+
+/**
  * Fetches exact attendance data from CyberVidya API.
  * Uses promise deduplication, 2-minute cache TTL, and fast abort timeouts for optimal speed.
  */
@@ -145,15 +193,7 @@ export async function fetchCyberVidhyaAttendance(force = false): Promise<boolean
               if (Array.isArray(compList) && compList.length > 0) {
                 compList.forEach((comp: any) => {
                   const componentName = (comp.componentName || "THEORY").trim().toUpperCase()
-                  const presentClasses =
-                    comp.numberOfPresent ?? comp.presentClasses ?? comp.attendedClasses ?? 0
-                  const totalClasses =
-                    comp.numberOfPeriods ?? comp.totalClasses ?? comp.conductedClasses ?? 0
-                  const percentage =
-                    comp.presentPercentage ??
-                    (totalClasses > 0
-                      ? Number(((presentClasses / totalClasses) * 100).toFixed(1))
-                      : 0)
+                  const { presentClasses, totalClasses, percentage, adjustedClasses } = extractClassCounts(comp)
 
                   const entry: CachedCourse = {
                     courseCode,
@@ -161,7 +201,8 @@ export async function fetchCyberVidhyaAttendance(force = false): Promise<boolean
                     componentName,
                     presentClasses,
                     totalClasses,
-                    percentage
+                    percentage,
+                    adjustedClasses
                   }
 
                   cacheCourseData(entry)
@@ -172,16 +213,7 @@ export async function fetchCyberVidhyaAttendance(force = false): Promise<boolean
                   item.component ||
                   "THEORY"
                 ).trim().toUpperCase()
-                const presentClasses =
-                  item.numberOfPresent ?? item.presentClasses ?? item.attendedClasses ?? 0
-                const totalClasses =
-                  item.numberOfPeriods ?? item.totalClasses ?? item.conductedClasses ?? 0
-                const percentage =
-                  item.presentPercentage ??
-                  item.percentage ??
-                  (totalClasses > 0
-                    ? Number(((presentClasses / totalClasses) * 100).toFixed(1))
-                    : 0)
+                const { presentClasses, totalClasses, percentage, adjustedClasses } = extractClassCounts(item)
 
                 const entry: CachedCourse = {
                   courseCode,
@@ -189,7 +221,8 @@ export async function fetchCyberVidhyaAttendance(force = false): Promise<boolean
                   componentName,
                   presentClasses,
                   totalClasses,
-                  percentage
+                  percentage,
+                  adjustedClasses
                 }
 
                 cacheCourseData(entry)
