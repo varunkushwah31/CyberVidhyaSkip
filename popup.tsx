@@ -1,18 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
-
-
-
-import { AttendanceOverview } from "~components/AttendanceOverview";
-import { CourseList } from "~components/CourseList";
-import { Header } from "~components/Header";
-import { SearchAndFilter } from "~components/SearchAndFilter";
-import type { AttendanceStore, FilterType } from "~types";
-import { calculateAggregatePercentage } from "~utils/attendance-calculator";
-import { getStoredAttendance, onStorageUpdated } from "~utils/storage";
-
-
-
-
+import { useEffect, useMemo, useState } from "react"
+import { AttendanceOverview } from "~components/AttendanceOverview"
+import { CourseList } from "~components/CourseList"
+import { Header } from "~components/Header"
+import { SearchAndFilter } from "~components/SearchAndFilter"
+import type { AttendanceStore, FilterType } from "~types"
+import { calculateAggregatePercentage } from "~utils/attendance-calculator"
+import { getStoredAttendance, onStorageUpdated } from "~utils/storage"
 
 function IndexPopup() {
   const [data, setData] = useState<AttendanceStore | null>(null)
@@ -23,7 +16,18 @@ function IndexPopup() {
   const [searchTerm, setSearchTerm] = useState("")
   const [activeFilter, setActiveFilter] = useState<FilterType>("all")
 
-  const checkActiveTab = () => {
+  useEffect(() => {
+    // Instant initial load from storage
+    getStoredAttendance().then((res) => {
+      if (res) setData(res)
+    })
+
+    // Listen for real-time storage updates
+    const unsubscribe = onStorageUpdated((newStore) => {
+      setData(newStore)
+    })
+
+    // Check active tab in background without blocking render
     if (typeof chrome !== "undefined" && chrome.tabs) {
       chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         const tab = tabs[0]
@@ -32,30 +36,18 @@ function IndexPopup() {
           const isCV = tab.url.includes("cybervidya.net")
           setIsCyberVidhya(isCV)
 
-          chrome.tabs.sendMessage(tab.id, { action: "SCAN_NOW" }, (response) => {
-            if (chrome.runtime.lastError) {
-              setScriptConnected(false)
-            } else if (response?.success) {
-              setScriptConnected(true)
-              getStoredAttendance().then((res) => {
-                if (res) setData(res)
-              })
-            }
-          })
+          if (isCV) {
+            chrome.tabs.sendMessage(tab.id, { action: "SCAN_NOW" }, (response) => {
+              if (chrome.runtime.lastError) {
+                setScriptConnected(false)
+              } else if (response?.success) {
+                setScriptConnected(true)
+              }
+            })
+          }
         }
       })
     }
-  }
-
-  useEffect(() => {
-    getStoredAttendance().then((res) => {
-      if (res) setData(res)
-    })
-    checkActiveTab()
-
-    const unsubscribe = onStorageUpdated((newStore) => {
-      setData(newStore)
-    })
 
     return () => unsubscribe()
   }, [])
@@ -63,15 +55,12 @@ function IndexPopup() {
   const handleScanNow = () => {
     if (!activeTabId) return
     setScanning(true)
-    chrome.tabs.sendMessage(activeTabId, { action: "SCAN_NOW" }, () => {
+    chrome.tabs.sendMessage(activeTabId, { action: "SCAN_NOW" }, (response) => {
       setScanning(false)
       if (chrome.runtime.lastError) {
         setScriptConnected(false)
-      } else {
+      } else if (response?.success) {
         setScriptConnected(true)
-        getStoredAttendance().then((res) => {
-          if (res) setData(res)
-        })
       }
     })
   }
@@ -89,7 +78,7 @@ function IndexPopup() {
     if (!data?.subjects) return []
     return data.subjects.filter(
       (s) =>
-        !/\b\d{1,2}[-\/]\d{1,2}[-\/]\d{2,4}\b/.test(s.subjectName) &&
+        !/\b\d{1,2}[-/]\d{1,2}[-/]\d{2,4}\b/.test(s.subjectName) &&
         s.subjectName.length > 2
     )
   }, [data?.subjects])

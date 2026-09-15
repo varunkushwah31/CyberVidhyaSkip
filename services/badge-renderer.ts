@@ -4,7 +4,7 @@ import type { BadgeTheme } from "~types"
 /**
  * Injects or updates a clean chip badge into a DOM container element.
  * Applies pointer-events: none so all user clicks pass freely to table cells and buttons!
- * Uses pure SVG icons with ZERO emojis.
+ * Performance optimized: short-circuits if identical badge is already rendered to avoid repaints.
  */
 export function injectBadge(
   container: HTMLElement,
@@ -13,6 +13,14 @@ export function injectBadge(
   tooltip?: string
 ): void {
   let badge = container.querySelector<HTMLSpanElement>(`.${BADGE_CLASS_NAME}`)
+
+  // Fast path: If badge already exists with identical message and style, avoid expensive DOM mutations!
+  if (badge?.dataset.message === message && badge.dataset.bg === styles.bg) {
+    if (tooltip && badge.title !== tooltip) {
+      badge.title = tooltip
+    }
+    return
+  }
 
   if (!badge) {
     badge = document.createElement("span")
@@ -35,11 +43,13 @@ export function injectBadge(
     container.appendChild(badge)
   }
 
+  badge.dataset.message = message
+  badge.dataset.bg = styles.bg
   badge.innerHTML = `<span style="display:inline-flex;align-items:center;color:${styles.text}">${styles.svgIcon}</span><span>${message}</span>`
   badge.style.backgroundColor = styles.bg
   badge.style.color = styles.text
   badge.style.border = `1px solid ${styles.border}`
-  
+
   if (tooltip) {
     badge.title = tooltip
   }

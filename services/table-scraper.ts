@@ -1,12 +1,12 @@
-import type { AttendanceMetrics, SubjectAttendance } from "~types"
-import {
-  compute75Metrics,
-  estimateAttendance
-} from "~utils/attendance-calculator"
-import { cleanElementText, parsePercentage } from "~utils/dom-utils"
+import type { AttendanceMetrics, SubjectAttendance } from "~types";
+import { compute75Metrics, estimateAttendance } from "~utils/attendance-calculator";
+import { cleanElementText, parsePercentage } from "~utils/dom-utils";
 
-import { injectBadge } from "./badge-renderer"
-import { findCachedCourse } from "./modal-scraper"
+
+
+import { injectBadge } from "./badge-renderer";
+import { findCachedCourse, setLastClickedCourse } from "./modal-scraper";
+
 
 /**
  * Scrapes and enhances the "Current Registered Courses" table on the General Dashboard.
@@ -32,7 +32,7 @@ export function scrapeGeneralDashboardTable(): SubjectAttendance[] {
       return
     }
 
-    // Must be the registered courses table
+    // Must be the courses table
     if (
       !headerJoined.includes("course") &&
       !headerJoined.includes("attendance")
@@ -87,7 +87,16 @@ export function scrapeGeneralDashboardTable(): SubjectAttendance[] {
       const courseCode = codeCell
         ? cleanElementText(codeCell).toUpperCase()
         : ""
-      const courseName = cleanElementText(nameCell)
+      let courseName = cleanElementText(nameCell)
+
+      // Check if full course name is stored in title attribute of cell or child elements
+      const titleAttr =
+        nameCell.getAttribute("title") ||
+        nameCell.querySelector("[title]")?.getAttribute("title")
+      if (titleAttr && titleAttr.trim().length > courseName.length) {
+        courseName = titleAttr.trim()
+      }
+
       const component = compCell
         ? cleanElementText(compCell).toUpperCase()
         : "THEORY"
@@ -98,7 +107,21 @@ export function scrapeGeneralDashboardTable(): SubjectAttendance[] {
 
       if (!courseName) return
 
-      // Check cache for exact attendance numbers
+      // Attach row click listener to capture eye-icon clicks and bind to modal
+      if (!row.dataset.hasClickListener) {
+        row.dataset.hasClickListener = "true"
+        row.addEventListener("click", () => {
+          setLastClickedCourse({
+            courseCode,
+            courseName,
+            component,
+            percentage
+          })
+          window.dispatchEvent(new CustomEvent("CV_CHECK_MODAL"))
+        })
+      }
+
+      // Look up cached exact attendance numbers (from live API or opened modals)
       const cached = findCachedCourse(courseCode, courseName, component)
 
       let metrics: AttendanceMetrics

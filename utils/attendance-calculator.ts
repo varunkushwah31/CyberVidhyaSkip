@@ -61,7 +61,34 @@ export function compute75Metrics(attended: number, total: number): AttendanceMet
 }
 
 /**
- * Estimates class counts from percentage and credit when exact modal counts aren't yet opened.
+ * Finds the irreducible minimal integer fraction (A, T) that rounds to the given percentage.
+ * Under university strict 75% attendance rules, an unverified estimate must NEVER
+ * overestimate safe skips, which would lead to student detention.
+ * E.g., for 89%: 8/9 = 88.9% gives exactly 1 safe skip (never 3).
+ */
+export function getConservativeFraction(percentage: number): { attended: number; total: number } {
+  if (percentage <= 0) return { attended: 0, total: 0 }
+  if (percentage >= 100) return { attended: 4, total: 4 }
+  if (percentage === 75) return { attended: 3, total: 4 }
+
+  for (let t = 1; t <= 60; t++) {
+    for (let a = 1; a <= t; a++) {
+      const p = Math.round((a / t) * 100)
+      if (p === percentage) {
+        return { attended: a, total: t }
+      }
+    }
+  }
+
+  return {
+    attended: Math.round((percentage / 100) * 10),
+    total: 10
+  }
+}
+
+/**
+ * Estimates class counts conservatively when exact API or modal counts aren't yet opened.
+ * Strictly guarantees that students are never misled into skipping more classes than allowed.
  */
 export function estimateAttendance(
   percentage: number,
@@ -92,15 +119,13 @@ export function estimateAttendance(
     }
   }
 
-  // Estimate total held classes based on course credit weight (approx 5.5 to 6 periods per credit conducted so far)
-  const estimatedTotal = Math.max(4, Math.round(credit * 5.8))
-  const estimatedAttended = Math.round((percentage / 100) * estimatedTotal)
-
-  return compute75Metrics(estimatedAttended, estimatedTotal)
+  // Use conservative irreducible fraction so safe skips are NEVER overestimated
+  const frac = getConservativeFraction(percentage)
+  return compute75Metrics(frac.attended, frac.total)
 }
 
 /**
- * Calculates credit-weighted aggregate attendance matching CyberVidya's 91.0%.
+ * Calculates credit-weighted aggregate attendance matching CyberVidhya's 91.0%.
  * Excludes unconducted courses (e.g. Project Internship with 0%).
  */
 export function calculateAggregatePercentage(subjects: SubjectAttendance[]): number {
