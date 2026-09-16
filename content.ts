@@ -5,6 +5,7 @@ import type { PlasmoCSConfig } from "plasmo";
 import { BADGE_CLASS_NAME } from "~constants/theme";
 import { fetchCyberVidhyaAttendance } from "~services/api-service";
 import { scrapeModalHeader } from "~services/modal-scraper";
+import { injectEyeTip, hideEyeTip } from "~services/eye-tip";
 import { scrapeGeneralDashboardTable } from "~services/table-scraper";
 import type { AttendanceStore } from "~types";
 import { calculateAggregatePercentage } from "~utils/attendance-calculator";
@@ -70,6 +71,7 @@ export function processAttendance(triggerApi = false): number {
     }
 
     saveStoredAttendance(payload)
+    injectEyeTip()
   }
 
   // 3. Asynchronously fetch latest API counts in background without blocking UI
@@ -77,6 +79,7 @@ export function processAttendance(triggerApi = false): number {
     fetchCyberVidhyaAttendance().then((updated) => {
       if (updated) {
         scrapeGeneralDashboardTable()
+        injectEyeTip()
       }
     })
   }
@@ -99,7 +102,12 @@ window.addEventListener("CV_CHECK_MODAL", () => {
 // Listen for global clicks on eye icons or table buttons
 document.addEventListener("click", (e) => {
   const target = e.target as HTMLElement | null
-  if (target && (target.closest("table") || target.closest(".modal") || target.classList?.contains("fa-eye"))) {
+  const isEyeOrAction =
+    target &&
+    (target.classList?.contains("fa-eye") ||
+      Boolean(target.closest(".fa-eye, [class*='eye'], [title*='Lecture'], [title*='Attendance'], a.btn, button.btn, .modal")))
+
+  if (target && (isEyeOrAction || target.closest(".modal"))) {
     ;[150, 400, 900].forEach((delay) => {
       setTimeout(() => {
         const modalSubject = scrapeModalHeader()
@@ -111,12 +119,20 @@ document.addEventListener("click", (e) => {
   }
 })
 
+
 // Runtime message listener for on-demand scans from popup
 if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
   chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
     if (request.action === "SCAN_NOW") {
       const count = processAttendance(true)
+      injectEyeTip()
       sendResponse({ success: true, count, url: window.location.href })
+      return true
+    }
+
+    if (request.action === "HIDE_EYE_TIP") {
+      hideEyeTip()
+      sendResponse({ success: true })
       return true
     }
   })
@@ -128,6 +144,7 @@ function debouncedProcess(): void {
   if (debounceTimer) clearTimeout(debounceTimer)
   debounceTimer = setTimeout(() => {
     processAttendance(false)
+    injectEyeTip()
   }, 200)
 }
 
@@ -198,10 +215,12 @@ function initObserver(): void {
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", () => {
     processAttendance(true)
+    injectEyeTip()
     initObserver()
   })
 } else {
   processAttendance(true)
+  injectEyeTip()
   initObserver()
 }
 

@@ -7,25 +7,25 @@ interface StatusPillProps {
 }
 
 export function StatusPill({ status, message }: Readonly<StatusPillProps>) {
-  let bg = "#ecfdf5"
-  let color = "#047857"
-  let border = "#a7f3d0"
+  let bg = "#e6f4ea"
+  let color = "#137333"
+  let border = "#ceead6"
   let Icon = ShieldCheckIcon
 
   if (status === "deficit") {
-    bg = "#fff1f2"
-    color = "#be123c"
-    border = "#fecdd3"
+    bg = "#fce8e6"
+    color = "#c5221f"
+    border = "#fad2cf"
     Icon = WarningCircleIcon
   } else if (status === "boundary") {
-    bg = "#fffbeb"
-    color = "#b45309"
-    border = "#fde68a"
+    bg = "#fff8e1"
+    color = "#b06000"
+    border = "#ffe082"
     Icon = WarningIcon
   } else if (status === "no_classes") {
-    bg = "#f1f5f9"
-    color = "#475569"
-    border = "#cbd5e1"
+    bg = "#f1f3f4"
+    color = "#5f6368"
+    border = "#dadce0"
     Icon = InfoIcon
   }
 
@@ -35,9 +35,9 @@ export function StatusPill({ status, message }: Readonly<StatusPillProps>) {
         display: "inline-flex",
         alignItems: "center",
         gap: 4,
-        padding: "3px 8px",
-        borderRadius: 9999,
-        fontSize: 11,
+        padding: "2px 6px",
+        borderRadius: 3,
+        fontSize: 10.5,
         fontWeight: 600,
         backgroundColor: bg,
         color,

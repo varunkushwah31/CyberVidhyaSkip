@@ -21,9 +21,9 @@ export function SearchAndFilter({
   counts
 }: Readonly<SearchAndFilterProps>) {
   return (
-    <div style={{ padding: "4px 16px 8px 16px" }}>
+    <div style={{ padding: "4px 14px 8px 14px" }}>
       {/* Search Input */}
-      <div style={{ position: "relative", marginBottom: 8 }}>
+      <div style={{ position: "relative", marginBottom: 7 }}>
         <input
           type="text"
           placeholder="Search subjects or course codes..."
@@ -31,83 +31,136 @@ export function SearchAndFilter({
           onChange={(e) => onSearchChange(e.target.value)}
           style={{
             width: "100%",
+            height: 32,
             boxSizing: "border-box",
-            padding: "8px 12px 8px 34px",
-            borderRadius: 8,
-            border: "1px solid #cbd5e1",
+            padding: "6px 12px 6px 32px",
+            borderRadius: 4,
+            border: "1px solid #ced4da",
             backgroundColor: "#ffffff",
             fontSize: 12,
-            color: "#0f172a",
+            color: "#495057",
             outline: "none",
-            transition: "all 0.15s ease"
+            transition: "border-color 0.15s ease, box-shadow 0.15s ease"
           }}
         />
         <div
           style={{
             position: "absolute",
-            left: 10,
+            left: 9,
             top: "50%",
             transform: "translateY(-50%)",
-            color: "#94a3b8",
+            color: "#6c757d",
             pointerEvents: "none",
             display: "flex",
             alignItems: "center"
           }}>
-          <MagnifyingGlassIcon size={15} weight="bold" />
+          <MagnifyingGlassIcon size={14} weight="bold" />
         </div>
       </div>
 
-      {/* Filter Tabs */}
-      <div style={{ display: "flex", gap: 6 }}>
+      {/* Filter Tabs (Bootstrap button group style) */}
+      <div style={{ display: "flex", gap: 5 }}>
         <button
           onClick={() => onFilterChange("all")}
           style={{
             flex: 1,
-            padding: "5px 8px",
-            borderRadius: 6,
-            border: activeFilter === "all" ? "1px solid #6366f1" : "1px solid #e2e8f0",
-            backgroundColor: activeFilter === "all" ? "#e0e7ff" : "#ffffff",
-            color: activeFilter === "all" ? "#3730a3" : "#64748b",
+            padding: "5px 6px",
+            borderRadius: 4,
+            border: activeFilter === "all" ? "1px solid #007bff" : "1px solid #ced4da",
+            backgroundColor: activeFilter === "all" ? "#007bff" : "#ffffff",
+            color: activeFilter === "all" ? "#ffffff" : "#495057",
             fontSize: 11,
             fontWeight: 600,
             cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 4,
             transition: "all 0.15s ease"
           }}>
-          All ({counts.all})
+          <span>All</span>
+          <span
+            style={{
+              padding: "1px 5px",
+              borderRadius: 8,
+              fontSize: 10,
+              backgroundColor: activeFilter === "all" ? "rgba(255, 255, 255, 0.25)" : "#e9ecef",
+              color: activeFilter === "all" ? "#ffffff" : "#495057"
+            }}>
+            {counts.all}
+          </span>
         </button>
 
         <button
           onClick={() => onFilterChange("risk")}
           style={{
             flex: 1,
-            padding: "5px 8px",
-            borderRadius: 6,
-            border: activeFilter === "risk" ? "1px solid #f43f5e" : "1px solid #e2e8f0",
-            backgroundColor: activeFilter === "risk" ? "#ffe4e6" : "#ffffff",
-            color: activeFilter === "risk" ? "#be123c" : "#64748b",
+            padding: "5px 6px",
+            borderRadius: 4,
+            border: activeFilter === "risk" ? "1px solid #dc3545" : "1px solid #ced4da",
+            backgroundColor: activeFilter === "risk" ? "#dc3545" : "#ffffff",
+            color: activeFilter === "risk" ? "#ffffff" : "#495057",
             fontSize: 11,
             fontWeight: 600,
             cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 4,
             transition: "all 0.15s ease"
           }}>
-          At Risk ({counts.risk})
+          <span>At Risk</span>
+          <span
+            style={{
+              padding: "1px 5px",
+              borderRadius: 8,
+              fontSize: 10,
+              backgroundColor:
+                activeFilter === "risk"
+                  ? "rgba(255, 255, 255, 0.25)"
+                  : counts.risk > 0
+                  ? "#fce8e6"
+                  : "#e9ecef",
+              color:
+                activeFilter === "risk"
+                  ? "#ffffff"
+                  : counts.risk > 0
+                  ? "#c5221f"
+                  : "#495057"
+            }}>
+            {counts.risk}
+          </span>
         </button>
 
         <button
           onClick={() => onFilterChange("safe")}
           style={{
             flex: 1,
-            padding: "5px 8px",
-            borderRadius: 6,
-            border: activeFilter === "safe" ? "1px solid #10b981" : "1px solid #e2e8f0",
-            backgroundColor: activeFilter === "safe" ? "#d1fae5" : "#ffffff",
-            color: activeFilter === "safe" ? "#065f46" : "#64748b",
+            padding: "5px 6px",
+            borderRadius: 4,
+            border: activeFilter === "safe" ? "1px solid #28a745" : "1px solid #ced4da",
+            backgroundColor: activeFilter === "safe" ? "#28a745" : "#ffffff",
+            color: activeFilter === "safe" ? "#ffffff" : "#495057",
             fontSize: 11,
             fontWeight: 600,
             cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 4,
             transition: "all 0.15s ease"
           }}>
-          Safe ({counts.safe})
+          <span>Safe</span>
+          <span
+            style={{
+              padding: "1px 5px",
+              borderRadius: 8,
+              fontSize: 10,
+              backgroundColor: activeFilter === "safe" ? "rgba(255, 255, 255, 0.25)" : "#e9ecef",
+              color: activeFilter === "safe" ? "#ffffff" : "#495057"
+            }}>
+            {counts.safe}
+          </span>
         </button>
       </div>
     </div>

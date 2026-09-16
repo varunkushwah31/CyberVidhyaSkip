@@ -3,6 +3,7 @@ import { compute75Metrics, estimateAttendance } from "~utils/attendance-calculat
 import { cleanElementText, parseInteger, parsePercentage } from "~utils/dom-utils";
 
 import { injectBadge } from "./badge-renderer";
+import { injectEyeTip } from "./eye-tip";
 import { cacheCourseData, findCachedCourse, setLastClickedCourse } from "./modal-scraper";
 
 interface TableColumnIndices {
@@ -17,7 +18,7 @@ interface TableColumnIndices {
   adjustedIdx: number
 }
 
-function findTableColumnIndices(headerCells: Element[]): TableColumnIndices {
+export function findTableColumnIndices(headerCells: Element[]): TableColumnIndices {
   let codeIdx = -1
   let nameIdx = -1
   let compIdx = -1
@@ -30,18 +31,29 @@ function findTableColumnIndices(headerCells: Element[]): TableColumnIndices {
 
   headerCells.forEach((cell, idx) => {
     const text = (cell.textContent || "").toLowerCase().trim()
-    if (text.includes("course code") || text === "code") {
+    if (text.includes("course code") || text === "code" || text.includes("variant")) {
       codeIdx = idx
-    } else if (text.includes("course name") || text.includes("subject")) {
+    } else if (
+      text === "course" ||
+      text === "course name" ||
+      text.includes("course name") ||
+      text.includes("subject")
+    ) {
       nameIdx = idx
     } else if (text.includes("component")) {
       compIdx = idx
     } else if (text.includes("credit")) {
       creditIdx = idx
-    } else if (text.includes("attendance") || text.includes("%")) {
-      percentIdx = idx
+    } else if (
+      text.includes("special attendance") ||
+      text.includes("adjusted") ||
+      text.includes("adjustment") ||
+      text === "od"
+    ) {
+      adjustedIdx = idx
     } else if (
       text === "present" ||
+      text === "presents" ||
       text === "attended" ||
       text.includes("total present") ||
       text.includes("classes attended") ||
@@ -57,6 +69,7 @@ function findTableColumnIndices(headerCells: Element[]): TableColumnIndices {
     ) {
       absentIdx = idx
     } else if (
+      text === "lectures" ||
       text === "total" ||
       text.includes("total lecture") ||
       text.includes("total class") ||
@@ -64,8 +77,11 @@ function findTableColumnIndices(headerCells: Element[]): TableColumnIndices {
       text.includes("held")
     ) {
       totalIdx = idx
-    } else if (text.includes("adjusted") || text.includes("adjustment") || text === "od") {
-      adjustedIdx = idx
+    } else if (
+      !text.includes("special") &&
+      (text.includes("attendance") || text.includes("%"))
+    ) {
+      percentIdx = idx
     }
   })
 
@@ -91,7 +107,7 @@ function findTableColumnIndices(headerCells: Element[]): TableColumnIndices {
   }
 }
 
-function isCourseTable(headerJoined: string): boolean {
+export function isCourseTable(headerJoined: string): boolean {
   // Strictly skip lecture-wise date history tables
   if (
     headerJoined.includes("time slot") ||
@@ -101,8 +117,13 @@ function isCourseTable(headerJoined: string): boolean {
     return false
   }
 
-  // Must be the courses table
-  return headerJoined.includes("course") || headerJoined.includes("attendance")
+  // Must be the courses table or My Attendance table
+  return (
+    headerJoined.includes("course") ||
+    headerJoined.includes("attendance") ||
+    headerJoined.includes("lectures") ||
+    headerJoined.includes("presents")
+  )
 }
 
 /**
@@ -156,14 +177,15 @@ function resolveRowMetrics(
   }
 
   // 2. Compute from DashboardTable columns when Present and Absent are displayed
-  if (tablePresent >= 0 && tableAbsent >= 0) {
+  if (tablePresent >= 0 && (tableAbsent >= 0 || tableTotal > 0)) {
+    const validAbsent = tableAbsent >= 0 ? tableAbsent : Math.max(0, tableTotal - tablePresent)
     const counts =
       tableAdjusted > 0
         ? {
             attended: tablePresent + tableAdjusted,
-            total: tableTotal > 0 ? tableTotal : tablePresent + tableAbsent + tableAdjusted
+            total: tableTotal > 0 ? tableTotal : tablePresent + validAbsent + tableAdjusted
           }
-        : calculateAdjustedFromTable(tablePresent, tableAbsent, tableTotal, percentage)
+        : calculateAdjustedFromTable(tablePresent, validAbsent, tableTotal, percentage)
 
     if (counts.total > 0 && counts.attended <= counts.total) {
       cacheCourseData({
@@ -172,7 +194,8 @@ function resolveRowMetrics(
         componentName: component,
         presentClasses: counts.attended,
         totalClasses: counts.total,
-        percentage
+        percentage,
+        adjustedClasses: tableAdjusted
       })
       return compute75Metrics(counts.attended, counts.total)
     }
@@ -196,9 +219,9 @@ function attachRowClickListener(
 }
 
 /**
- * Scrapes and enhances the "Current Registered Courses" table on the General Dashboard.
+ * Scrapes and enhances the "Current Registered Courses" or "Course Components" table.
  * Injects clean action badges directly into the Attendance % column.
- * Counts students marked "ADJUSTED" as present even if DashboardTable only displays Present and Absent.
+ * Counts students marked "ADJUSTED" / "Special Attendance" as present.
  */
 export function scrapeGeneralDashboardTable(): SubjectAttendance[] {
   const tables = document.querySelectorAll<HTMLTableElement>("table")
@@ -215,6 +238,8 @@ export function scrapeGeneralDashboardTable(): SubjectAttendance[] {
 
     const indices = findTableColumnIndices(headerCells)
     const rows = table.querySelectorAll<HTMLTableRowElement>("tbody tr, tr")
+    let tableExactCount = 0
+    let tableCourseCount = 0
 
     rows.forEach((row) => {
       if (row.querySelector("th") && !row.querySelector("td")) return
@@ -230,9 +255,14 @@ export function scrapeGeneralDashboardTable(): SubjectAttendance[] {
 
       if (!nameCell || !percentCell) return
 
-      const courseCode = codeCell ? cleanElementText(codeCell).toUpperCase() : ""
-      let courseName = cleanElementText(nameCell)
+      let courseCode = codeCell ? cleanElementText(codeCell).toUpperCase() : ""
+      // Extract code prefix if cell is a variant like "IT401B-Bachelor of Technology-..."
+      const variantMatch = /^([A-Z0-9]+)/i.exec(courseCode)
+      if (courseCode.includes("-") && variantMatch) {
+        courseCode = variantMatch[1].toUpperCase()
+      }
 
+      let courseName = cleanElementText(nameCell)
       const titleAttr =
         nameCell.getAttribute("title") ||
         nameCell.querySelector("[title]")?.getAttribute("title")
@@ -277,9 +307,28 @@ export function scrapeGeneralDashboardTable(): SubjectAttendance[] {
         tableAdjusted
       )
 
+      // Check whether this course's exact details are cached from modal or My Attendance
+      const cached = findCachedCourse(courseCode, courseName, component)
+      const isExact = Boolean(cached && cached.totalClasses > 0)
+      if (isExact) {
+        tableExactCount++
+      }
+      tableCourseCount++
+
+      // Clean, native tooltip on eye icon if present
+      const eyeIconEl = row.querySelector<HTMLElement>(".fa-eye, [class*='eye']")
+      if (eyeIconEl) {
+        eyeIconEl.title = isExact
+          ? "Exact attendance verified"
+          : "Click to view lecture breakdown and verify exact attendance"
+        eyeIconEl.style.cursor = "pointer"
+      }
+
       const tooltip =
         metrics.total > 0
-          ? `${metrics.attended} attended / ${metrics.total} total classes (${percentage}%)`
+          ? `${metrics.attended} attended / ${metrics.total} total classes (${percentage}%)${
+              isExact ? " • Exact Verified" : " • Click 👁️ or view My Attendance"
+            }`
           : `Attendance: ${percentage}% (Credit: ${credit})`
 
       injectBadge(percentCell, metrics.message, metrics.badgeStyles, tooltip)
@@ -299,7 +348,13 @@ export function scrapeGeneralDashboardTable(): SubjectAttendance[] {
         message: metrics.message
       })
     })
+
+    if (tableCourseCount > 0) {
+      injectEyeTip(table, tableExactCount, tableCourseCount)
+    }
   })
+
+
 
   return extracted
 }

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { AttendanceOverview } from "~components/AttendanceOverview"
 import { CourseList } from "~components/CourseList"
+import { EyeTip } from "~components/EyeTip"
 import { Header } from "~components/Header"
 import { SearchAndFilter } from "~components/SearchAndFilter"
 import type { AttendanceStore, FilterType } from "~types"
@@ -15,6 +16,7 @@ function IndexPopup() {
   const [scanning, setScanning] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
   const [activeFilter, setActiveFilter] = useState<FilterType>("all")
+  const [showEyeTip, setShowEyeTip] = useState<boolean | null>(null)
 
   useEffect(() => {
     // Instant initial load from storage
@@ -121,12 +123,12 @@ function IndexPopup() {
   return (
     <div
       style={{
-        width: 395,
+        width: 385,
         maxHeight: 595,
         fontFamily:
-          "-apple-system, BlinkMacSystemFont, 'Inter', 'SF Pro Display', 'Segoe UI', Roboto, sans-serif",
-        backgroundColor: "#f8fafc",
-        color: "#0f172a",
+          '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+        backgroundColor: "#f4f6f9",
+        color: "#212529",
         margin: 0,
         display: "flex",
         flexDirection: "column",
@@ -138,18 +140,31 @@ function IndexPopup() {
           width: 5px;
         }
         ::-webkit-scrollbar-track {
-          background: transparent;
+          background: #f4f6f9;
         }
         ::-webkit-scrollbar-thumb {
-          background: #cbd5e1;
-          border-radius: 9999px;
+          background: #ced4da;
+          border-radius: 4px;
         }
         ::-webkit-scrollbar-thumb:hover {
-          background: #94a3b8;
+          background: #adb5bd;
         }
       `}</style>
 
-      <Header scanning={scanning} onScan={handleScanNow} />
+      <Header
+        scanning={scanning}
+        onScan={handleScanNow}
+        onToggleTip={() => setShowEyeTip((prev) => (prev === null ? true : !prev))}
+        tipActive={showEyeTip === true}
+      />
+
+      {cleanSubjects.length > 0 && (
+        <EyeTip
+          activeTabId={activeTabId}
+          forceVisible={showEyeTip === true}
+          onClose={() => setShowEyeTip(false)}
+        />
+      )}
 
       {cleanSubjects.length > 0 && (
         <>

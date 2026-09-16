@@ -17,29 +17,35 @@ export const BADGE_SVGS = {
 
 export const STATUS_THEMES: Record<AttendanceStatus, BadgeTheme> = {
   surplus: {
-    bg: "#ecfdf5",
-    text: "#047857",
-    border: "#a7f3d0",
+    bg: "#e6f4ea",
+    text: "#137333",
+    border: "#ceead6",
     svgIcon: BADGE_SVGS.surplus
   },
   boundary: {
-    bg: "#fffbeb",
-    text: "#b45309",
-    border: "#fde68a",
+    bg: "#fff8e1",
+    text: "#b06000",
+    border: "#ffe082",
     svgIcon: BADGE_SVGS.boundary
   },
   deficit: {
-    bg: "#fff1f2",
-    text: "#be123c",
-    border: "#fecdd3",
+    bg: "#fce8e6",
+    text: "#c5221f",
+    border: "#fad2cf",
     svgIcon: BADGE_SVGS.deficit
   },
   no_classes: {
-    bg: "#f1f5f9",
-    text: "#475569",
-    border: "#cbd5e1",
+    bg: "#f1f3f4",
+    text: "#5f6368",
+    border: "#dadce0",
     svgIcon: BADGE_SVGS.no_classes
   }
 }
 
+
 export const BADGE_CLASS_NAME = "cv-attendance-badge"
+
+export const EYE_TIP_CLASS_NAME = "cv-eye-tip"
+
+// Eye icon for the accuracy tip banner (white line style)
+export const EYE_TIP_SVG = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>`

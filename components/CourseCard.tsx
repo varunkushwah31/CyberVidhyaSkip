@@ -7,15 +7,15 @@ interface CourseCardProps {
 
 function getBarColor(status: SubjectAttendance["status"], isBoundary: boolean): string {
   if (status === "no_classes") {
-    return "#94a3b8"
+    return "#6c757d"
   }
   if (status === "deficit") {
-    return "#ef4444"
+    return "#dc3545"
   }
   if (isBoundary) {
-    return "#f59e0b"
+    return "#ffc107"
   }
-  return "#10b981"
+  return "#28a745"
 }
 
 export function CourseCard({ subject }: Readonly<CourseCardProps>) {
@@ -28,11 +28,11 @@ export function CourseCard({ subject }: Readonly<CourseCardProps>) {
     <div
       style={{
         backgroundColor: "#ffffff",
-        borderRadius: 12,
-        padding: "14px 16px",
-        marginBottom: 10,
-        boxShadow: "0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03)",
-        border: "1px solid #e2e8f0",
+        borderRadius: 4,
+        padding: "10px 12px",
+        marginBottom: 7,
+        boxShadow: "0 1px 2px rgba(0, 0, 0, 0.04)",
+        border: "1px solid #dee2e6",
         transition: "all 0.15s ease"
       }}>
       {/* Top Meta row */}
@@ -41,18 +41,19 @@ export function CourseCard({ subject }: Readonly<CourseCardProps>) {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          marginBottom: 6
+          marginBottom: 5
         }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
           {subject.courseCode && (
             <span
               style={{
                 fontSize: 10,
                 fontWeight: 700,
-                padding: "2px 6px",
-                borderRadius: 4,
-                backgroundColor: "#e0e7ff",
-                color: "#3730a3",
+                padding: "2px 5px",
+                borderRadius: 3,
+                backgroundColor: "#f8f9fa",
+                color: "#212529",
+                border: "1px solid #ced4da",
                 letterSpacing: "0.02em"
               }}>
               {subject.courseCode}
@@ -63,10 +64,11 @@ export function CourseCard({ subject }: Readonly<CourseCardProps>) {
               style={{
                 fontSize: 10,
                 fontWeight: 600,
-                padding: "2px 6px",
-                borderRadius: 4,
-                backgroundColor: "#f1f5f9",
-                color: "#475569"
+                padding: "2px 5px",
+                borderRadius: 3,
+                backgroundColor: "#e7f1ff",
+                color: "#007bff",
+                border: "1px solid #b6d4fe"
               }}>
               {subject.component}
             </span>
@@ -76,7 +78,7 @@ export function CourseCard({ subject }: Readonly<CourseCardProps>) {
               style={{
                 fontSize: 10,
                 fontWeight: 500,
-                color: "#64748b"
+                color: "#6c757d"
               }}>
               {subject.credit} Cr
             </span>
@@ -89,23 +91,23 @@ export function CourseCard({ subject }: Readonly<CourseCardProps>) {
       {/* Subject Name */}
       <div
         style={{
-          fontSize: 13,
+          fontSize: 12.5,
           fontWeight: 600,
-          color: "#1e293b",
-          marginBottom: 10,
+          color: "#212529",
+          marginBottom: 7,
           lineHeight: 1.35
         }}>
         {subject.subjectName}
       </div>
 
       {/* Progress Bar with 75% target indicator */}
-      <div style={{ marginBottom: 8 }}>
+      <div style={{ marginBottom: 7 }}>
         <div
           style={{
             position: "relative",
-            height: 6,
-            backgroundColor: "#f1f5f9",
-            borderRadius: 9999,
+            height: 5,
+            backgroundColor: "#e9ecef",
+            borderRadius: 2,
             overflow: "hidden"
           }}>
           <div
@@ -113,8 +115,8 @@ export function CourseCard({ subject }: Readonly<CourseCardProps>) {
               width: `${progressWidth}%`,
               height: "100%",
               backgroundColor: barColor,
-              borderRadius: 9999,
-              transition: "width 0.4s ease"
+              borderRadius: 2,
+              transition: "width 0.3s ease"
             }}
           />
           {/* 75% Marker Line */}
@@ -125,7 +127,8 @@ export function CourseCard({ subject }: Readonly<CourseCardProps>) {
               top: 0,
               bottom: 0,
               width: 2,
-              backgroundColor: "rgba(15, 23, 42, 0.35)",
+              backgroundColor: "#343a40",
+              opacity: 0.35,
               zIndex: 2
             }}
             title="75% Target"
@@ -140,24 +143,26 @@ export function CourseCard({ subject }: Readonly<CourseCardProps>) {
           justifyContent: "space-between",
           alignItems: "center",
           fontSize: 11,
-          color: "#64748b"
+          color: "#495057"
         }}>
         <div>
           {subject.total > 0 ? (
             <span>
-              Attended: <strong style={{ color: "#0f172a" }}>{subject.attended}</strong>
+              Attended: <strong style={{ color: "#212529" }}>{subject.attended}</strong>
               {" / "}
               {subject.total}
-              {subject.missed > 0 && <span>{` (Missed: ${subject.missed})`}</span>}
+              {subject.missed > 0 && (
+                <span style={{ color: "#dc3545" }}>{` (Missed: ${subject.missed})`}</span>
+              )}
             </span>
           ) : (
-            <span>No conducted classes recorded</span>
+            <span style={{ color: "#6c757d" }}>No conducted classes</span>
           )}
         </div>
 
         <span
           style={{
-            fontSize: 13,
+            fontSize: 12.5,
             fontWeight: 700,
             color: barColor
           }}>

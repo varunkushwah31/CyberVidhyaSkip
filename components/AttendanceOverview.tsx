@@ -21,100 +21,155 @@ export function AttendanceOverview({
     <div
       style={{
         backgroundColor: "#ffffff",
-        margin: "12px 16px 8px 16px",
-        borderRadius: 14,
-        padding: "14px 16px",
-        border: "1px solid #e2e8f0",
-        boxShadow: "0 2px 4px rgba(0, 0, 0, 0.03)"
+        margin: "8px 14px 6px 14px",
+        borderRadius: 4,
+        padding: "12px 14px",
+        border: "1px solid #dee2e6",
+        boxShadow: "0 1px 2px rgba(0, 0, 0, 0.04)"
       }}>
-      {/* Top Banner Row */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div>
-          <span style={{ fontSize: 11, fontWeight: 600, color: "#64748b", textTransform: "uppercase" }}>
-            Aggregate Attendance
-          </span>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginTop: 2 }}>
-            <span
-              style={{
-                fontSize: 26,
-                fontWeight: 800,
-                letterSpacing: "-0.03em",
-                color: isSafe ? "#0f766e" : "#be123c"
-              }}>
-              {aggregatePercentage}%
-            </span>
-            <span style={{ fontSize: 12, color: "#94a3b8", fontWeight: 500 }}>
-              (Target: 75%)
-            </span>
-          </div>
-        </div>
-
-        {/* Status Pill */}
-        <div
+      {/* Section Header */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 6
+        }}>
+        <span
           style={{
-            display: "flex",
+            fontSize: 10.5,
+            fontWeight: 700,
+            color: "#007bff",
+            textTransform: "uppercase",
+            letterSpacing: "0.5px"
+          }}>
+          Attendance Overview
+        </span>
+
+        {/* Status Pill matching CyberVidhya ACTIVE badge */}
+        <span
+          style={{
+            display: "inline-flex",
             alignItems: "center",
-            gap: 6,
-            padding: "6px 10px",
-            borderRadius: 8,
-            backgroundColor: isSafe ? "#ecfdf5" : "#fff1f2",
-            color: isSafe ? "#047857" : "#be123c",
-            border: `1px solid ${isSafe ? "#a7f3d0" : "#fecdd3"}`,
-            fontSize: 12,
-            fontWeight: 600
+            gap: 4,
+            padding: "2px 7px",
+            borderRadius: 3,
+            backgroundColor: isSafe ? "#28a745" : "#dc3545",
+            color: "#ffffff",
+            fontSize: 10,
+            fontWeight: 700,
+            letterSpacing: "0.3px",
+            textTransform: "uppercase"
           }}>
           {isSafe ? (
             <>
-              <ShieldCheckIcon size={16} weight="bold" />
+              <ShieldCheckIcon size={12} weight="bold" />
               <span>Safe Zone</span>
             </>
           ) : (
             <>
-              <WarningCircleIcon size={16} weight="bold" />
+              <WarningCircleIcon size={12} weight="bold" />
               <span>Detention Risk</span>
             </>
           )}
-        </div>
+        </span>
       </div>
 
-      {/* Metrics Row */}
+      {/* Aggregate Attendance Stat */}
+      <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 8 }}>
+        <span
+          style={{
+            fontSize: 26,
+            fontWeight: 800,
+            letterSpacing: "-0.03em",
+            color: isSafe ? "#28a745" : "#dc3545"
+          }}>
+          {aggregatePercentage}%
+        </span>
+        <span style={{ fontSize: 11.5, color: "#6c757d", fontWeight: 500 }}>
+          (Target: 75%)
+        </span>
+      </div>
+
+      {/* Metrics Row formatted as Bootstrap mini-cards */}
       <div
         style={{
           display: "grid",
           gridTemplateColumns: "repeat(4, 1fr)",
           gap: 6,
-          marginTop: 12,
-          paddingTop: 10,
-          borderTop: "1px solid #f1f5f9"
+          paddingTop: 8,
+          borderTop: "1px solid #e9ecef"
         }}>
-        <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: 10, color: "#64748b", fontWeight: 500 }}>Attended</div>
-          <div style={{ fontSize: 14, fontWeight: 700, color: "#0f172a", marginTop: 1 }}>
+        <div
+          style={{
+            textAlign: "center",
+            backgroundColor: "#f8f9fa",
+            border: "1px solid #e9ecef",
+            borderRadius: 3,
+            padding: "5px 2px"
+          }}>
+          <div style={{ fontSize: 9.5, color: "#6c757d", fontWeight: 600, textTransform: "uppercase" }}>
+            Attended
+          </div>
+          <div style={{ fontSize: 13.5, fontWeight: 700, color: "#212529", marginTop: 1 }}>
             {totalAttended}
           </div>
         </div>
 
-        <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: 10, color: "#64748b", fontWeight: 500 }}>Missed</div>
-          <div style={{ fontSize: 14, fontWeight: 700, color: "#be123c", marginTop: 1 }}>
+        <div
+          style={{
+            textAlign: "center",
+            backgroundColor: "#f8f9fa",
+            border: "1px solid #e9ecef",
+            borderRadius: 3,
+            padding: "5px 2px"
+          }}>
+          <div style={{ fontSize: 9.5, color: "#6c757d", fontWeight: 600, textTransform: "uppercase" }}>
+            Missed
+          </div>
+          <div
+            style={{
+              fontSize: 13.5,
+              fontWeight: 700,
+              color: totalMissed > 0 ? "#dc3545" : "#212529",
+              marginTop: 1
+            }}>
             {totalMissed}
           </div>
         </div>
 
-        <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: 10, color: "#64748b", fontWeight: 500 }}>Conducted</div>
-          <div style={{ fontSize: 14, fontWeight: 700, color: "#0f172a", marginTop: 1 }}>
+        <div
+          style={{
+            textAlign: "center",
+            backgroundColor: "#f8f9fa",
+            border: "1px solid #e9ecef",
+            borderRadius: 3,
+            padding: "5px 2px"
+          }}>
+          <div style={{ fontSize: 9.5, color: "#6c757d", fontWeight: 600, textTransform: "uppercase" }}>
+            Total
+          </div>
+          <div style={{ fontSize: 13.5, fontWeight: 700, color: "#212529", marginTop: 1 }}>
             {totalClasses}
           </div>
         </div>
 
-        <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: 10, color: "#64748b", fontWeight: 500 }}>At Risk</div>
+        <div
+          style={{
+            textAlign: "center",
+            backgroundColor: "#f8f9fa",
+            border: "1px solid #e9ecef",
+            borderRadius: 3,
+            padding: "5px 2px"
+          }}>
+          <div style={{ fontSize: 9.5, color: "#6c757d", fontWeight: 600, textTransform: "uppercase" }}>
+            At Risk
+          </div>
           <div
             style={{
-              fontSize: 14,
+              fontSize: 13.5,
               fontWeight: 700,
-              color: detentionCount > 0 ? "#be123c" : "#047857",
+              color: detentionCount > 0 ? "#dc3545" : "#28a745",
               marginTop: 1
             }}>
             {detentionCount}
