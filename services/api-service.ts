@@ -86,8 +86,12 @@ function extractClassCounts(item: any): {
   adjustedClasses: number
 } {
   const rawPresent = item.numberOfPresent ?? item.presentClasses ?? item.attendedClasses ?? 0
-  const totalClasses = item.numberOfPeriods ?? item.totalClasses ?? item.conductedClasses ?? 0
   const rawAbsent = item.numberOfAbsent ?? item.absentClasses ?? item.missedClasses ?? 0
+  const totalClasses =
+    item.conductedClasses ??
+    item.totalClasses ??
+    item.numberOfConducted ??
+    (rawPresent > 0 || rawAbsent > 0 ? rawPresent + rawAbsent : 0)
   const adjusted =
     item.numberOfAdjusted ??
     item.numberOfAdjustment ??
@@ -127,6 +131,8 @@ function extractClassCounts(item: any): {
  * Fetches exact attendance data from CyberVidya API.
  * Uses promise deduplication, 2-minute cache TTL, and fast abort timeouts for optimal speed.
  */
+let apiEndpointDisabled = false
+
 export async function fetchCyberVidhyaAttendance(force = false): Promise<boolean> {
   if (!window.location.hostname.includes("cybervidya.net")) {
     return false
@@ -138,6 +144,11 @@ export async function fetchCyberVidhyaAttendance(force = false): Promise<boolean
     return true
   }
 
+  // If the internal API is known to return 500/404 on this portal, fall back directly to page scraping
+  if (apiEndpointDisabled) {
+    return fetchMyAttendancePage()
+  }
+
   // Reuse in-flight request if already pending
   if (activeFetchPromise) {
     return activeFetchPromise
@@ -146,7 +157,10 @@ export async function fetchCyberVidhyaAttendance(force = false): Promise<boolean
   activeFetchPromise = (async () => {
     try {
       const token = findAuthToken()
-      const authHeader = token ? `GlobalEducation ${token}` : null
+      if (!token) {
+        return false
+      }
+      const authHeader = `GlobalEducation ${token}`
 
       const headers: Record<string, string> = {
         Accept: "application/json, text/plain, */*"
@@ -168,7 +182,11 @@ export async function fetchCyberVidhyaAttendance(force = false): Promise<boolean
 
         clearTimeout(timeoutId)
 
-        if (res.ok) {
+        if (!res.ok) {
+          if (res.status >= 500 || res.status === 404) {
+            apiEndpointDisabled = true
+          }
+        } else {
           const json = await res.json()
           const rawList =
             json?.data?.attendanceCourseComponentInfoList ||

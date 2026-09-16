@@ -23,15 +23,9 @@ export function setLastClickedCourse(ctx: ClickedCourseContext): void {
   lastClickedCourse = ctx
 }
 
-// Load persisted cache on startup
+// Clear legacy/corrupted cache from previous builds
 if (typeof chrome !== "undefined" && chrome.storage?.local) {
-  chrome.storage.local.get(["courseDataCache"], (res) => {
-    if (res.courseDataCache && typeof res.courseDataCache === "object") {
-      Object.entries(res.courseDataCache).forEach(([key, val]) => {
-        courseDataCache.set(key, val as CachedCourse)
-      })
-    }
-  })
+  chrome.storage.local.remove(["courseDataCache"])
 }
 
 function persistCache(): void {
@@ -108,14 +102,11 @@ function findDirectCacheMatch(
 }
 
 function isFuzzyNameMatch(cleanKey: string, cleanName: string): boolean {
-  if (cleanName.length < 6) return false
-  const prefix = cleanName.slice(0, 8)
-  const keyPrefix = cleanKey.slice(0, 8)
+  if (cleanName.length < 6 || cleanKey.length < 6) return false
   return (
     cleanKey.startsWith(cleanName) ||
     cleanName.startsWith(cleanKey) ||
-    cleanKey.includes(prefix) ||
-    cleanName.includes(keyPrefix)
+    (cleanName.length >= 10 && cleanKey.slice(0, 10) === cleanName.slice(0, 10))
   )
 }
 
@@ -129,7 +120,7 @@ function findFuzzyCacheMatch(
   normComp: string
 ): CachedCourse | undefined {
   for (const [key, val] of courseDataCache.entries()) {
-    if (normCode && key.startsWith(normCode)) {
+    if (normCode && key === normCode) {
       return val
     }
 

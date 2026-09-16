@@ -170,23 +170,37 @@ function resolveRowMetrics(
   tableTotal: number,
   tableAdjusted: number
 ): AttendanceMetrics {
-  // 1. Look up cached exact attendance numbers (from live API or opened modals)
-  const cached = findCachedCourse(courseCode, courseName, component)
-  if (cached && cached.totalClasses > 0) {
-    return compute75Metrics(cached.presentClasses, cached.totalClasses)
-  }
+  // 1. Primary ground truth: Compute directly from live rendered table columns!
+  // When Presents and Lectures are displayed on screen, they are the verified university counts.
+  if (tablePresent >= 0 && (tableTotal >= 0 || tableAbsent >= 0)) {
+    if (tableTotal === 0 && tablePresent === 0) {
+      return compute75Metrics(0, 0)
+    }
 
-  // 2. Compute from DashboardTable columns when Present and Absent are displayed
-  if (tablePresent >= 0 && (tableAbsent >= 0 || tableTotal > 0)) {
-    const validAbsent = tableAbsent >= 0 ? tableAbsent : Math.max(0, tableTotal - tablePresent)
-    const counts =
-      tableAdjusted > 0
-        ? {
-            attended: tablePresent + tableAdjusted,
-            total: tableTotal > 0 ? tableTotal : tablePresent + validAbsent + tableAdjusted
-          }
-        : calculateAdjustedFromTable(tablePresent, validAbsent, tableTotal, percentage)
+    const validTotal =
+      tableTotal > 0
+        ? tableTotal
+        : tableAbsent >= 0
+          ? tablePresent + tableAbsent + tableAdjusted
+          : 0
+    const validAttended = tablePresent + tableAdjusted
 
+    if (validTotal > 0 && validAttended <= validTotal) {
+      cacheCourseData({
+        courseCode,
+        courseName,
+        componentName: component,
+        presentClasses: validAttended,
+        totalClasses: validTotal,
+        percentage,
+        adjustedClasses: tableAdjusted
+      })
+      return compute75Metrics(validAttended, validTotal)
+    }
+
+    // Fallback if table displays Present & Absent without Total:
+    const validAbsent = tableAbsent >= 0 ? tableAbsent : Math.max(0, validTotal - tablePresent)
+    const counts = calculateAdjustedFromTable(tablePresent, validAbsent, validTotal, percentage)
     if (counts.total > 0 && counts.attended <= counts.total) {
       cacheCourseData({
         courseCode,
@@ -201,7 +215,17 @@ function resolveRowMetrics(
     }
   }
 
-  // 3. Fallback to conservative estimation when table only has percentage
+  // 2. Secondary fallback: Look up cached exact attendance numbers (from opened lecture modals)
+  const cached = findCachedCourse(courseCode, courseName, component)
+  if (cached && cached.totalClasses > 0) {
+    const cachedPercent = (cached.presentClasses / cached.totalClasses) * 100
+    // Verify cached percentage aligns with row percentage to avoid stale/mismatched data
+    if (Math.abs(cachedPercent - percentage) <= 2.5) {
+      return compute75Metrics(cached.presentClasses, cached.totalClasses)
+    }
+  }
+
+  // 3. Final fallback: Conservative estimation when table only displays percentage
   return estimateAttendance(percentage, credit, component)
 }
 

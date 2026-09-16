@@ -45,8 +45,4 @@ export const STATUS_THEMES: Record<AttendanceStatus, BadgeTheme> = {
 
 export const BADGE_CLASS_NAME = "cv-attendance-badge"
 
-export const TABLE_CELL_WRAPPER_CLASS = "cv-attendance-cell"
-
-export const PERCENT_TEXT_CLASS = "cv-percent-value"
-
 export const EYE_TIP_CLASS_NAME = "cv-eye-tip"
