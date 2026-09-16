@@ -71,6 +71,14 @@ export function processAttendance(triggerApi = false): number {
     }
 
     saveStoredAttendance(payload)
+    const exactCount = dashboardSubjects.filter((s) => s.actionCount > 0 || (s as any).isExact).length
+    injectEyeTip({
+      subjects: dashboardSubjects,
+      exactCount,
+      totalCount: dashboardSubjects.length,
+      overallPercentage
+    })
+  } else {
     injectEyeTip()
   }
 
@@ -185,8 +193,9 @@ function initObserver(): void {
               tag === "tr" ||
               tag === "table" ||
               tag === "tbody" ||
+              tag === "fieldset" ||
               node.classList?.contains("modal") ||
-              node.querySelector?.("table, tr, .modal")
+              node.querySelector?.("table, tr, .modal, fieldset, [class*='card'], [class*='box'], [class*='panel']")
             ) {
               shouldProcess = true
               break
@@ -212,18 +221,27 @@ function initObserver(): void {
 }
 
 // Execution lifecycle triggers
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", () => {
-    processAttendance(true)
-    injectEyeTip()
-    initObserver()
-  })
-} else {
+function runLifecycle(): void {
   processAttendance(true)
   injectEyeTip()
   initObserver()
+
+  // Staggered retries to catch late AJAX data hydration on CyberVidhya dashboards
+  ;[300, 700, 1400, 2500, 4500].forEach((delay) => {
+    setTimeout(() => {
+      processAttendance(false)
+      injectEyeTip()
+    }, delay)
+  })
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", runLifecycle)
+} else {
+  runLifecycle()
 }
 
 window.addEventListener("load", () => {
   processAttendance(false)
+  injectEyeTip()
 })
