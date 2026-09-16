@@ -132,9 +132,21 @@ function extractClassCounts(item: any): {
  * Uses promise deduplication, 2-minute cache TTL, and fast abort timeouts for optimal speed.
  */
 let apiEndpointDisabled = false
+if (typeof chrome !== "undefined" && chrome.storage?.local) {
+  chrome.storage.local.get("apiEndpointDisabled", (data) => {
+    if (data?.apiEndpointDisabled) {
+      apiEndpointDisabled = true
+    }
+  })
+}
 
 export async function fetchCyberVidhyaAttendance(force = false): Promise<boolean> {
   if (!window.location.hostname.includes("cybervidya.net")) {
+    return false
+  }
+
+  // If already on /attendance/my-attendance, the live table is already directly on screen
+  if (window.location.href.includes("my-attendance")) {
     return false
   }
 
@@ -185,6 +197,9 @@ export async function fetchCyberVidhyaAttendance(force = false): Promise<boolean
         if (!res.ok) {
           if (res.status >= 500 || res.status === 404) {
             apiEndpointDisabled = true
+            if (typeof chrome !== "undefined" && chrome.storage?.local) {
+              chrome.storage.local.set({ apiEndpointDisabled: true })
+            }
           }
         } else {
           const json = await res.json()
@@ -274,6 +289,11 @@ export async function fetchCyberVidhyaAttendance(force = false): Promise<boolean
  */
 export async function fetchMyAttendancePage(): Promise<boolean> {
   if (typeof window === "undefined" || !window.location.hostname.includes("cybervidya.net")) {
+    return false
+  }
+
+  // If already on /attendance/my-attendance, the live table is already directly on screen
+  if (window.location.href.includes("my-attendance")) {
     return false
   }
 

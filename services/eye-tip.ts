@@ -64,7 +64,7 @@ export function injectEyeTip(
   if (!courseTable) return
 
   // Don't inject on /attendance/my-attendance since that page already has full exact counts
-  if (window.location.pathname.includes("/attendance/my-attendance")) {
+  if (window.location.href.includes("my-attendance")) {
     return
   }
 
