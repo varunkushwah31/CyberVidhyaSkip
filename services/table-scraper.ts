@@ -2,7 +2,7 @@ import type { AttendanceMetrics, SubjectAttendance } from "~types";
 import { compute75Metrics, estimateAttendance } from "~utils/attendance-calculator";
 import { cleanElementText, parseInteger, parsePercentage } from "~utils/dom-utils";
 
-import { injectBadge } from "./badge-renderer";
+import { injectTableBadge } from "./badge-renderer";
 import { injectEyeTip } from "./eye-tip";
 import { cacheCourseData, findCachedCourse, setLastClickedCourse } from "./modal-scraper";
 
@@ -331,7 +331,9 @@ export function scrapeGeneralDashboardTable(): SubjectAttendance[] {
             }`
           : `Attendance: ${percentage}% (Credit: ${credit})`
 
-      injectBadge(percentCell, metrics.message, metrics.badgeStyles, tooltip)
+      const rawPercent = cleanElementText(percentCell)
+      const percentDisplay = rawPercent.includes("%") ? rawPercent : `${percentage}%`
+      injectTableBadge(percentCell, percentDisplay, metrics.message, metrics.badgeStyles, tooltip)
 
       extracted.push({
         id: `${courseCode || courseName}-${component}`,

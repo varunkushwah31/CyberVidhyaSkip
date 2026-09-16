@@ -1,15 +1,11 @@
-import { BADGE_CLASS_NAME } from "~constants/theme";
-
-
-
-
+import { BADGE_CLASS_NAME, EYE_TIP_CLASS_NAME } from "~constants/theme";
 
 /**
  * Strips injected badges and cleans whitespace from an element's text.
  */
 export function cleanElementText(el: HTMLElement): string {
   const clone = el.cloneNode(true) as HTMLElement
-  clone.querySelectorAll(`.${BADGE_CLASS_NAME}`).forEach((b) => b.remove())
+  clone.querySelectorAll(`.${BADGE_CLASS_NAME}, .${EYE_TIP_CLASS_NAME}`).forEach((b) => b.remove())
   return (clone.textContent || "").trim().replace(/\s+/g, " ")
 }
 
