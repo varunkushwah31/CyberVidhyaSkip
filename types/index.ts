@@ -47,6 +47,7 @@ export interface AttendanceStore {
 }
 
 export type FilterType = "all" | "risk" | "safe"
+export type ThemeMode = "dark" | "light"
 
 export interface CachedCourse {
   courseCode: string
@@ -57,3 +58,4 @@ export interface CachedCourse {
   percentage: number
   adjustedClasses?: number
 }
+

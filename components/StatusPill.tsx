@@ -1,51 +1,51 @@
-import { InfoIcon, ShieldCheckIcon, WarningIcon, WarningCircleIcon } from "@phosphor-icons/react"
+import { InfoIcon, ShieldCheckIcon, WarningCircleIcon, WarningIcon } from "@phosphor-icons/react"
+import type { AppTheme } from "~constants/theme"
 import type { AttendanceStatus } from "~types"
 
 interface StatusPillProps {
   readonly status: AttendanceStatus
   readonly message: string
+  readonly theme?: AppTheme
 }
 
-export function StatusPill({ status, message }: Readonly<StatusPillProps>) {
-  let bg = "#e6f4ea"
-  let color = "#137333"
-  let border = "#ceead6"
+export function StatusPill({ status, message, theme }: Readonly<StatusPillProps>) {
   let Icon = ShieldCheckIcon
 
   if (status === "deficit") {
-    bg = "#fce8e6"
-    color = "#c5221f"
-    border = "#fad2cf"
     Icon = WarningCircleIcon
   } else if (status === "boundary") {
-    bg = "#fff8e1"
-    color = "#b06000"
-    border = "#ffe082"
     Icon = WarningIcon
   } else if (status === "no_classes") {
-    bg = "#f1f3f4"
-    color = "#5f6368"
-    border = "#dadce0"
     Icon = InfoIcon
   }
+
+  // Use theme colors if provided, else fallback to sleek modern colors
+  const statusColor = theme?.statusColors?.[status]
+  const bg = statusColor ? statusColor.bg : status === "deficit" ? "rgba(244, 63, 94, 0.12)" : status === "boundary" ? "rgba(245, 158, 11, 0.12)" : status === "no_classes" ? "rgba(148, 163, 184, 0.12)" : "rgba(16, 185, 129, 0.12)"
+  const color = statusColor ? statusColor.text : status === "deficit" ? "#fb7185" : status === "boundary" ? "#fbbf24" : status === "no_classes" ? "#94a3b8" : "#34d399"
+  const border = statusColor ? statusColor.border : status === "deficit" ? "rgba(251, 113, 133, 0.25)" : status === "boundary" ? "rgba(251, 191, 36, 0.25)" : status === "no_classes" ? "rgba(148, 163, 184, 0.25)" : "rgba(52, 211, 153, 0.25)"
 
   return (
     <span
       style={{
         display: "inline-flex",
         alignItems: "center",
-        gap: 4,
-        padding: "2px 6px",
-        borderRadius: 3,
+        gap: 4.5,
+        padding: "3px 8px",
+        borderRadius: 9999,
         fontSize: 10.5,
         fontWeight: 600,
+        letterSpacing: "0.01em",
         backgroundColor: bg,
         color,
         border: `1px solid ${border}`,
-        lineHeight: 1.2
+        lineHeight: 1.2,
+        boxShadow: "0 1px 2px rgba(0, 0, 0, 0.03)",
+        whiteSpace: "nowrap"
       }}>
       <Icon size={12} weight="bold" />
-      <span>{message}</span>
+      <span style={{ fontVariantNumeric: "tabular-nums" }}>{message}</span>
     </span>
   )
 }
+

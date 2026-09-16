@@ -4,7 +4,8 @@ import { CourseList } from "~components/CourseList"
 import { EyeTip } from "~components/EyeTip"
 import { Header } from "~components/Header"
 import { SearchAndFilter } from "~components/SearchAndFilter"
-import type { AttendanceStore, FilterType } from "~types"
+import { THEMES } from "~constants/theme"
+import type { AttendanceStore, FilterType, ThemeMode } from "~types"
 import { calculateAggregatePercentage } from "~utils/attendance-calculator"
 import { getStoredAttendance, onStorageUpdated } from "~utils/storage"
 
@@ -17,8 +18,23 @@ function IndexPopup() {
   const [searchTerm, setSearchTerm] = useState("")
   const [activeFilter, setActiveFilter] = useState<FilterType>("all")
   const [showEyeTip, setShowEyeTip] = useState<boolean | null>(null)
+  const [themeMode, setThemeMode] = useState<ThemeMode>("dark")
 
   useEffect(() => {
+    // Load persisted theme preference
+    if (typeof chrome !== "undefined" && chrome.storage?.local) {
+      chrome.storage.local.get(["cv_theme"], (result) => {
+        if (result?.cv_theme === "light" || result?.cv_theme === "dark") {
+          setThemeMode(result.cv_theme)
+        }
+      })
+    } else if (typeof localStorage !== "undefined") {
+      const saved = localStorage.getItem("cv_theme") as ThemeMode | null
+      if (saved === "light" || saved === "dark") {
+        setThemeMode(saved)
+      }
+    }
+
     // Instant initial load from storage
     getStoredAttendance().then((res) => {
       if (res) setData(res)
@@ -53,6 +69,20 @@ function IndexPopup() {
 
     return () => unsubscribe()
   }, [])
+
+  const handleToggleTheme = () => {
+    setThemeMode((prev) => {
+      const next: ThemeMode = prev === "dark" ? "light" : "dark"
+      if (typeof chrome !== "undefined" && chrome.storage?.local) {
+        chrome.storage.local.set({ cv_theme: next })
+      } else if (typeof localStorage !== "undefined") {
+        localStorage.setItem("cv_theme", next)
+      }
+      return next
+    })
+  }
+
+  const currentTheme = THEMES[themeMode]
 
   const handleScanNow = () => {
     if (!activeTabId) return
@@ -127,72 +157,106 @@ function IndexPopup() {
         maxHeight: 595,
         fontFamily:
           '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-        backgroundColor: "#f4f6f9",
-        color: "#212529",
+        backgroundColor: currentTheme.bg,
+        color: currentTheme.textPrimary,
         margin: 0,
         display: "flex",
         flexDirection: "column",
         overflow: "hidden",
-        boxSizing: "border-box"
+        boxSizing: "border-box",
+        transition: "background-color 0.2s ease, color 0.2s ease"
       }}>
       <style>{`
         ::-webkit-scrollbar {
           width: 5px;
         }
         ::-webkit-scrollbar-track {
-          background: #f4f6f9;
+          background: transparent;
         }
         ::-webkit-scrollbar-thumb {
-          background: #ced4da;
-          border-radius: 4px;
+          background: ${themeMode === "dark" ? "rgba(255, 255, 255, 0.15)" : "rgba(0, 0, 0, 0.15)"};
+          border-radius: 9999px;
         }
         ::-webkit-scrollbar-thumb:hover {
-          background: #adb5bd;
+          background: ${themeMode === "dark" ? "rgba(255, 255, 255, 0.28)" : "rgba(0, 0, 0, 0.28)"};
         }
       `}</style>
 
-      <Header
-        scanning={scanning}
-        onScan={handleScanNow}
-        onToggleTip={() => setShowEyeTip((prev) => (prev === null ? true : !prev))}
-        tipActive={showEyeTip === true}
-      />
-
-      {cleanSubjects.length > 0 && (
-        <EyeTip
-          activeTabId={activeTabId}
-          forceVisible={showEyeTip === true}
-          onClose={() => setShowEyeTip(false)}
+      <div style={{ flexShrink: 0 }}>
+        <Header
+          scanning={scanning}
+          onScan={handleScanNow}
+          onToggleTip={() => setShowEyeTip((prev) => (prev === null ? true : !prev))}
+          tipActive={showEyeTip === true}
+          theme={currentTheme}
+          onToggleTheme={handleToggleTheme}
         />
-      )}
+      </div>
 
-      {cleanSubjects.length > 0 && (
-        <>
-          <AttendanceOverview
-            aggregatePercentage={aggregatePercentage}
-            activeSubjects={activeSubjects}
-            detentionCount={counts.risk}
+      {/* Silky smooth unified scroll container */}
+      <div
+        style={{
+          flex: 1,
+          overflowY: "auto",
+          overflowX: "hidden",
+          display: "flex",
+          flexDirection: "column",
+          minHeight: 0
+        }}>
+        {cleanSubjects.length > 0 && (
+          <EyeTip
+            activeTabId={activeTabId}
+            forceVisible={showEyeTip === true}
+            onClose={() => setShowEyeTip(false)}
+            theme={currentTheme}
           />
+        )}
 
-          <SearchAndFilter
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-            activeFilter={activeFilter}
-            onFilterChange={setActiveFilter}
-            counts={counts}
-          />
-        </>
-      )}
+        {cleanSubjects.length > 0 && (
+          <>
+            <AttendanceOverview
+              aggregatePercentage={aggregatePercentage}
+              activeSubjects={activeSubjects}
+              detentionCount={counts.risk}
+              theme={currentTheme}
+            />
 
-      <CourseList
-        subjects={filteredSubjects}
-        searchTerm={searchTerm}
-        isCyberVidhya={isCyberVidhya}
-        scriptConnected={scriptConnected}
-        onReloadTab={handleReloadTab}
-      />
+            {/* Sticky Search & Filter with backdrop blur */}
+            <div
+              style={{
+                position: "sticky",
+                top: 0,
+                zIndex: 10,
+                backdropFilter: "blur(16px)",
+                WebkitBackdropFilter: "blur(16px)",
+                backgroundColor: currentTheme.stickyBg,
+                borderBottom: `1px solid ${currentTheme.cardBorder}`,
+                marginBottom: 8
+              }}>
+              <SearchAndFilter
+                searchTerm={searchTerm}
+                onSearchChange={setSearchTerm}
+                activeFilter={activeFilter}
+                onFilterChange={setActiveFilter}
+                counts={counts}
+                theme={currentTheme}
+              />
+            </div>
+          </>
+        )}
+
+        <CourseList
+          subjects={filteredSubjects}
+          searchTerm={searchTerm}
+          isCyberVidhya={isCyberVidhya}
+          scriptConnected={scriptConnected}
+          onReloadTab={handleReloadTab}
+          theme={currentTheme}
+        />
+      </div>
     </div>
   )
 }
 
 export default IndexPopup
+

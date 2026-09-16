@@ -34,13 +34,13 @@ export function injectBadge(
     badge.className = BADGE_CLASS_NAME
     badge.style.display = "inline-flex"
     badge.style.alignItems = "center"
-    badge.style.gap = "4px"
+    badge.style.gap = "4.5px"
     badge.style.marginLeft = "8px"
-    badge.style.padding = "2px 7px"
-    badge.style.borderRadius = "4px"
-    badge.style.fontSize = "11px"
+    badge.style.padding = "2.5px 8px"
+    badge.style.borderRadius = "9999px"
+    badge.style.fontSize = "10.5px"
     badge.style.fontWeight = "600"
-    badge.style.lineHeight = "1"
+    badge.style.lineHeight = "1.2"
     badge.style.whiteSpace = "nowrap"
     badge.style.verticalAlign = "middle"
     badge.style.boxShadow = "0 1px 2px rgba(0, 0, 0, 0.04)"
@@ -52,7 +52,7 @@ export function injectBadge(
 
   badge.dataset.message = message
   badge.dataset.bg = styles.bg
-  badge.innerHTML = `<span style="display:inline-flex;align-items:center;justify-content:center;line-height:0;flex-shrink:0;color:${styles.text}">${styles.svgIcon}</span><span style="line-height:1;display:inline-block;">${message}</span>`
+  badge.innerHTML = `<span style="display:inline-flex;align-items:center;justify-content:center;line-height:0;flex-shrink:0;color:${styles.text}">${styles.svgIcon}</span><span style="line-height:1;display:inline-block;font-variant-numeric:tabular-nums;">${message}</span>`
   badge.style.backgroundColor = styles.bg
   badge.style.color = styles.text
   badge.style.border = `1px solid ${styles.border}`
@@ -105,12 +105,12 @@ export function injectTableBadge(
     badge.style.transform = "translateY(-50%)"
     badge.style.display = "inline-flex"
     badge.style.alignItems = "center"
-    badge.style.gap = "4px"
-    badge.style.padding = "2px 7px"
-    badge.style.borderRadius = "4px"
-    badge.style.fontSize = "11px"
+    badge.style.gap = "4.5px"
+    badge.style.padding = "2.5px 8px"
+    badge.style.borderRadius = "9999px"
+    badge.style.fontSize = "10.5px"
     badge.style.fontWeight = "600"
-    badge.style.lineHeight = "1"
+    badge.style.lineHeight = "1.2"
     badge.style.whiteSpace = "nowrap"
     badge.style.boxShadow = "0 1px 2px rgba(0, 0, 0, 0.04)"
     badge.style.pointerEvents = "none" // Allow clicks to pass straight through to cell/row!
@@ -123,7 +123,7 @@ export function injectTableBadge(
 
   badge.dataset.message = message
   badge.dataset.bg = styles.bg
-  badge.innerHTML = `<span style="display:inline-flex;align-items:center;justify-content:center;line-height:0;flex-shrink:0;color:${styles.text}">${styles.svgIcon}</span><span style="line-height:1;display:inline-block;">${message}</span>`
+  badge.innerHTML = `<span style="display:inline-flex;align-items:center;justify-content:center;line-height:0;flex-shrink:0;color:${styles.text}">${styles.svgIcon}</span><span style="line-height:1;display:inline-block;font-variant-numeric:tabular-nums;">${message}</span>`
   badge.style.backgroundColor = styles.bg
   badge.style.color = styles.text
   badge.style.border = `1px solid ${styles.border}`
@@ -132,4 +132,5 @@ export function injectTableBadge(
     badge.title = tooltip
   }
 }
+
 

@@ -1,15 +1,16 @@
 import { EyeIcon, XIcon } from "@phosphor-icons/react"
 import { useEffect, useState } from "react"
-
+import type { AppTheme } from "~constants/theme"
 import { dismissEyeTip, getEyeTipDismissed } from "~utils/storage"
 
 interface EyeTipProps {
   readonly activeTabId: number | null
   readonly forceVisible?: boolean
   readonly onClose?: () => void
+  readonly theme?: AppTheme
 }
 
-export function EyeTip({ activeTabId, forceVisible = false, onClose }: Readonly<EyeTipProps>) {
+export function EyeTip({ activeTabId, forceVisible = false, onClose, theme }: Readonly<EyeTipProps>) {
   const [ready, setReady] = useState(false)
   const [dismissed, setDismissed] = useState(true)
 
@@ -36,8 +37,15 @@ export function EyeTip({ activeTabId, forceVisible = false, onClose }: Readonly<
   }
 
   // If forceVisible is explicitly passed as true, render regardless of persisted dismissed state
-  const isVisible = forceVisible ? true : (ready && !dismissed)
+  const isVisible = forceVisible ? true : ready && !dismissed
   if (!isVisible) return null
+
+  const isDark = theme?.name === "dark"
+  const cardBg = isDark ? "rgba(99, 102, 241, 0.12)" : "#eff6ff"
+  const cardBorder = isDark ? "rgba(99, 102, 241, 0.25)" : "#bfdbfe"
+  const titleColor = theme?.textPrimary || "#0f172a"
+  const bodyColor = theme?.textSecondary || "#475569"
+  const accentColor = theme?.accent || "#4f46e5"
 
   return (
     <div
@@ -45,28 +53,30 @@ export function EyeTip({ activeTabId, forceVisible = false, onClose }: Readonly<
         display: "flex",
         alignItems: "flex-start",
         gap: 10,
-        margin: "6px 14px 2px 14px",
-        padding: "8px 12px",
-        borderRadius: 4,
-        backgroundColor: "#ffffff",
-        border: "1px solid #dee2e6",
-        borderLeft: "4px solid #007bff",
-        boxShadow: "0 1px 2px rgba(0, 0, 0, 0.04)"
+        margin: "8px 14px 2px 14px",
+        padding: "10px 12px",
+        borderRadius: 12,
+        backgroundColor: cardBg,
+        border: `1px solid ${cardBorder}`,
+        boxShadow: "0 2px 8px -2px rgba(99, 102, 241, 0.12)",
+        position: "relative",
+        transition: "all 0.2s ease"
       }}>
       <div
         style={{
           flexShrink: 0,
-          width: 24,
-          height: 24,
-          borderRadius: 3,
-          backgroundColor: "#e7f1ff",
-          color: "#007bff",
+          width: 26,
+          height: 26,
+          borderRadius: 8,
+          background: theme?.accentGradient || "linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)",
+          color: "#ffffff",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          marginTop: 1
+          marginTop: 1,
+          boxShadow: "0 2px 6px rgba(99, 102, 241, 0.25)"
         }}>
-        <EyeIcon size={15} weight="bold" />
+        <EyeIcon size={14} weight="bold" />
       </div>
 
       <div style={{ flex: 1, minWidth: 0 }}>
@@ -74,21 +84,21 @@ export function EyeTip({ activeTabId, forceVisible = false, onClose }: Readonly<
           style={{
             fontSize: 11.5,
             fontWeight: 700,
-            color: "#212529",
+            color: titleColor,
             letterSpacing: "-0.01em"
           }}>
           Accurate Attendance Tracking
         </div>
         <p
           style={{
-            margin: "2px 0 0 0",
+            margin: "3px 0 0 0",
             fontSize: 11,
-            lineHeight: 1.4,
-            color: "#495057"
+            lineHeight: 1.45,
+            color: bodyColor
           }}>
-          Exact lecture and duty leave (OD) counts are verified from the{" "}
-          <strong style={{ color: "#007bff" }}>My Attendance</strong> page or by
-          clicking each course's <strong style={{ color: "#212529" }}>eye icon (👁️)</strong>.
+          Lecture and duty leave (OD) counts are verified from the{" "}
+          <strong style={{ color: accentColor }}>My Attendance</strong> page or by
+          clicking each course's <strong style={{ color: titleColor }}>eye icon (👁️)</strong>.
         </p>
       </div>
 
@@ -97,22 +107,34 @@ export function EyeTip({ activeTabId, forceVisible = false, onClose }: Readonly<
         title="Dismiss"
         style={{
           flexShrink: 0,
-          width: 20,
-          height: 20,
+          width: 22,
+          height: 22,
           border: "none",
-          borderRadius: 3,
+          borderRadius: 6,
           background: "transparent",
-          color: "#6c757d",
+          color: theme?.textMuted || "#94a3b8",
           cursor: "pointer",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          padding: 0
+          padding: 0,
+          transition: "all 0.15s ease"
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.color = titleColor
+          e.currentTarget.style.backgroundColor = isDark
+            ? "rgba(255, 255, 255, 0.1)"
+            : "rgba(0, 0, 0, 0.06)"
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.color = theme?.textMuted || "#94a3b8"
+          e.currentTarget.style.backgroundColor = "transparent"
         }}>
         <XIcon size={13} weight="bold" />
       </button>
     </div>
   )
 }
+
 
 
