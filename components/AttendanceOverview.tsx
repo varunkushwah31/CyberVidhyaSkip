@@ -1,5 +1,7 @@
+import { ShieldCheckIcon, WarningCircleIcon } from "@phosphor-icons/react"
 import type { AppTheme } from "~constants/theme"
-import type { SubjectAttendance } from "~types";
+import type { SubjectAttendance } from "~types"
+
 interface AttendanceOverviewProps {
   readonly aggregatePercentage: number
   readonly activeSubjects: readonly SubjectAttendance[]
@@ -13,23 +15,37 @@ export function AttendanceOverview({
   detentionCount,
   theme
 }: Readonly<AttendanceOverviewProps>) {
-  const isSafe = aggregatePercentage >= 75
+  const isAggregateSafe = aggregatePercentage >= 75
   const totalAttended = activeSubjects.reduce((acc, s) => acc + s.attended, 0)
   const totalMissed = activeSubjects.reduce((acc, s) => acc + s.missed, 0)
   const totalClasses = activeSubjects.reduce((acc, s) => acc + s.total, 0)
 
-  // Strict 75% mathematical calculations
-  let bufferClasses = 0
-  let neededClasses = 0
+  // Deficit courses analysis
+  const deficitSubjects = activeSubjects.filter((s) => s.status === "deficit" || s.percentage < 75)
+  const hasDeficit = detentionCount > 0 || deficitSubjects.length > 0
+  const deficitCount = Math.max(detentionCount, deficitSubjects.length)
+  const classesNeededToRecover = deficitSubjects.reduce((acc, s) => {
+    return acc + Math.max(1, Math.ceil(3 * s.total - 4 * s.attended))
+  }, 0)
+
+  // Strict 75% aggregate buffer calculation
+  let aggregateBufferClasses = 0
+  let aggregateNeededClasses = 0
   if (totalClasses > 0) {
-    if (isSafe) {
-      bufferClasses = Math.max(0, Math.floor((4 * totalAttended - 3 * totalClasses) / 3))
+    if (isAggregateSafe) {
+      aggregateBufferClasses = Math.max(0, Math.floor((4 * totalAttended - 3 * totalClasses) / 3))
     } else {
-      neededClasses = Math.max(1, 3 * totalClasses - 4 * totalAttended)
+      aggregateNeededClasses = Math.max(1, 3 * totalClasses - 4 * totalAttended)
     }
   }
 
-  const statusTheme = isSafe ? theme.statusColors.surplus : theme.statusColors.deficit
+  // Visual status theme - prioritized by course debarment risk
+  const statusTheme = hasDeficit
+    ? theme.statusColors.deficit
+    : isAggregateSafe
+      ? theme.statusColors.surplus
+      : theme.statusColors.deficit
+
   const progressRatio = Math.min(1, Math.max(0, aggregatePercentage / 100))
 
   return (
@@ -56,29 +72,48 @@ export function AttendanceOverview({
           {/* Primary Action Insight */}
           <div
             style={{
-              fontSize: 16,
+              fontSize: 15,
               fontWeight: 700,
               letterSpacing: "-0.02em",
               color: theme.textPrimary,
               lineHeight: 1.25
             }}>
-            {isSafe ? (
-              bufferClasses > 0 ? (
+            {hasDeficit ? (
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                <WarningCircleIcon size={17} weight="fill" style={{ color: theme.statusColors.deficit.solid, flexShrink: 0 }} />
                 <span>
-                  Can skip{" "}
-                  <strong style={{ color: statusTheme.solid, fontWeight: 700 }}>
-                    {bufferClasses} {bufferClasses === 1 ? "class" : "classes"}
-                  </strong>
+                  <strong style={{ color: theme.statusColors.deficit.solid, fontWeight: 700 }}>
+                    {deficitCount} {deficitCount === 1 ? "course" : "courses"}
+                  </strong>{" "}
+                  below 75%
+                </span>
+              </span>
+            ) : isAggregateSafe ? (
+              aggregateBufferClasses > 0 ? (
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                  <ShieldCheckIcon size={17} weight="fill" style={{ color: statusTheme.solid, flexShrink: 0 }} />
+                  <span>
+                    Can skip{" "}
+                    <strong style={{ color: statusTheme.solid, fontWeight: 700 }}>
+                      {aggregateBufferClasses} {aggregateBufferClasses === 1 ? "class" : "classes"}
+                    </strong>
+                  </span>
                 </span>
               ) : (
-                <span>On 75% boundary</span>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                  <ShieldCheckIcon size={17} weight="fill" style={{ color: statusTheme.solid, flexShrink: 0 }} />
+                  <span>On 75% boundary</span>
+                </span>
               )
             ) : (
-              <span>
-                Attend next{" "}
-                <strong style={{ color: statusTheme.solid, fontWeight: 700 }}>
-                  {neededClasses} {neededClasses === 1 ? "class" : "classes"}
-                </strong>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                <WarningCircleIcon size={17} weight="fill" style={{ color: statusTheme.solid, flexShrink: 0 }} />
+                <span>
+                  Attend next{" "}
+                  <strong style={{ color: statusTheme.solid, fontWeight: 700 }}>
+                    {aggregateNeededClasses} {aggregateNeededClasses === 1 ? "class" : "classes"}
+                  </strong>
+                </span>
               </span>
             )}
           </div>
@@ -92,11 +127,11 @@ export function AttendanceOverview({
               fontWeight: 400,
               lineHeight: 1.4
             }}>
-            {isSafe
-              ? `${aggregatePercentage.toFixed(1)}% aggregate · 75% requirement met`
-              : `${aggregatePercentage.toFixed(1)}% aggregate · ${detentionCount} course${
-                  detentionCount > 1 ? "s" : ""
-                } below 75%`}
+            {hasDeficit
+              ? `Attend next ${classesNeededToRecover} ${classesNeededToRecover === 1 ? "class" : "classes"} to recover · ${aggregatePercentage.toFixed(1)}% aggregate`
+              : isAggregateSafe
+                ? `All courses meet 75% rule · ${aggregatePercentage.toFixed(1)}% aggregate`
+                : `${aggregatePercentage.toFixed(1)}% aggregate · Below 75% requirement`}
           </div>
         </div>
 
@@ -105,6 +140,7 @@ export function AttendanceOverview({
           style={{
             display: "inline-flex",
             alignItems: "center",
+            gap: 4,
             padding: "3px 8px",
             borderRadius: 9999,
             backgroundColor: statusTheme.bg,
@@ -116,6 +152,7 @@ export function AttendanceOverview({
             letterSpacing: "-0.01em",
             flexShrink: 0
           }}>
+          {hasDeficit && <WarningCircleIcon size={12} weight="fill" />}
           {aggregatePercentage.toFixed(1)}%
         </span>
       </div>
@@ -161,7 +198,7 @@ export function AttendanceOverview({
         <span>
           {totalMissed > 0 ? (
             <span>
-              <strong style={{ color: detentionCount > 0 ? theme.statusColors.deficit.solid : theme.textSecondary, fontWeight: 600 }}>
+              <strong style={{ color: hasDeficit ? theme.statusColors.deficit.solid : theme.textSecondary, fontWeight: 600 }}>
                 {totalMissed}
               </strong>{" "}
               missed

@@ -1,4 +1,4 @@
-import { BookOpenIcon, EyeIcon, MagnifyingGlassIcon } from "@phosphor-icons/react"
+import { ArrowSquareOutIcon, BookOpenIcon, EyeIcon, MagnifyingGlassIcon } from "@phosphor-icons/react"
 import type { AppTheme } from "~constants/theme"
 import type { SubjectAttendance } from "~types"
 import { CourseCard } from "./CourseCard"
@@ -9,6 +9,7 @@ interface CourseListProps {
   readonly isCyberVidhya: boolean
   readonly scriptConnected: boolean | null
   readonly onReloadTab: () => void
+  readonly onOpenPortal?: () => void
   readonly theme: AppTheme
 }
 
@@ -18,6 +19,7 @@ export function CourseList({
   isCyberVidhya,
   scriptConnected,
   onReloadTab,
+  onOpenPortal,
   theme
 }: Readonly<CourseListProps>) {
   if (subjects.length > 0) {
@@ -77,25 +79,15 @@ export function CourseList({
     return (
       <div
         style={{
-          padding: "42px 20px",
+          padding: "36px 20px",
           textAlign: "center",
           color: theme.textMuted
         }}>
-        <div
-          style={{
-            width: 42,
-            height: 42,
-            borderRadius: 12,
-            backgroundColor: theme.metricBg,
-            border: `1px solid ${theme.metricBorder}`,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            margin: "0 auto 12px auto",
-            color: theme.textMuted
-          }}>
-          <MagnifyingGlassIcon size={20} weight="bold" />
-        </div>
+        <MagnifyingGlassIcon
+          size={32}
+          weight="duotone"
+          style={{ color: theme.textMuted, margin: "0 auto 10px auto", display: "block" }}
+        />
         <div
           style={{
             fontSize: 13.5,
@@ -116,7 +108,7 @@ export function CourseList({
   return (
     <div
       style={{
-        padding: "26px 18px",
+        padding: "24px 18px",
         textAlign: "center",
         backgroundColor: theme.cardBg,
         margin: "10px 14px 14px 14px",
@@ -124,20 +116,11 @@ export function CourseList({
         border: `1px solid ${theme.cardBorder}`,
         boxShadow: theme.cardShadow
       }}>
-      <div
-        style={{
-          width: 44,
-          height: 44,
-          borderRadius: 12,
-          backgroundColor: theme.accent,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          margin: "0 auto 12px auto",
-          color: "#ffffff"
-        }}>
-        <BookOpenIcon size={22} weight="bold" />
-      </div>
+      <BookOpenIcon
+        size={36}
+        weight="duotone"
+        style={{ color: theme.accent, margin: "0 auto 10px auto", display: "block" }}
+      />
 
       <div
         style={{
@@ -183,6 +166,36 @@ export function CourseList({
             e.currentTarget.style.opacity = "1"
           }}>
           Reload Portal Tab
+        </button>
+      )}
+
+      {!isCyberVidhya && onOpenPortal && (
+        <button
+          onClick={onOpenPortal}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 6,
+            padding: "8px 18px",
+            backgroundColor: theme.accent,
+            color: "#ffffff",
+            border: "none",
+            borderRadius: 8,
+            fontSize: 12,
+            fontWeight: 600,
+            cursor: "pointer",
+            boxShadow: "0 1px 2px rgba(0, 0, 0, 0.15)",
+            transition: "opacity 0.15s ease"
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.opacity = "0.9"
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.opacity = "1"
+          }}>
+          <ArrowSquareOutIcon size={14} weight="bold" />
+          Open CyberVidhya Portal
         </button>
       )}
     </div>

@@ -102,10 +102,11 @@ export function EyeTip({ activeTabId, forceVisible = false, onClose, theme }: Re
       <button
         onClick={handleDismiss}
         title="Dismiss"
+        aria-label="Dismiss attendance guidance"
         style={{
           flexShrink: 0,
-          width: 22,
-          height: 22,
+          width: 26,
+          height: 26,
           border: "none",
           borderRadius: 6,
           background: "transparent",
@@ -127,7 +128,7 @@ export function EyeTip({ activeTabId, forceVisible = false, onClose, theme }: Re
           e.currentTarget.style.color = theme?.textMuted || "#94a3b8"
           e.currentTarget.style.backgroundColor = "transparent"
         }}>
-        <XIcon size={13} weight="bold" />
+        <XIcon size={14} weight="bold" />
       </button>
     </div>
   )

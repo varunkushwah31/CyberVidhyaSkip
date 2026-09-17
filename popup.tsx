@@ -105,6 +105,26 @@ function IndexPopup() {
     }
   }
 
+  const handleOpenPortal = () => {
+    if (typeof chrome !== "undefined" && chrome.tabs) {
+      chrome.tabs.query({ url: "*://*.cybervidya.net/*" }, (tabs) => {
+        if (tabs && tabs.length > 0 && tabs[0].id) {
+          chrome.tabs.update(tabs[0].id, { active: true })
+          if (tabs[0].windowId) {
+            chrome.windows.update(tabs[0].windowId, { focused: true })
+          }
+          window.close()
+        } else {
+          chrome.tabs.create({ url: "https://cybervidya.net" }, () => {
+            window.close()
+          })
+        }
+      })
+    } else {
+      window.open("https://cybervidya.net", "_blank")
+    }
+  }
+
   // Filter out any legacy date logs
   const cleanSubjects = useMemo(() => {
     if (!data?.subjects) return []
@@ -188,6 +208,7 @@ function IndexPopup() {
           onScan={handleScanNow}
           onToggleTip={() => setShowEyeTip((prev) => (prev === null ? true : !prev))}
           tipActive={showEyeTip === true}
+          lastUpdated={data?.lastUpdated}
           theme={currentTheme}
           onToggleTheme={handleToggleTheme}
         />
@@ -251,6 +272,7 @@ function IndexPopup() {
           isCyberVidhya={isCyberVidhya}
           scriptConnected={scriptConnected}
           onReloadTab={handleReloadTab}
+          onOpenPortal={handleOpenPortal}
           theme={currentTheme}
         />
       </div>

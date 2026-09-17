@@ -6,8 +6,19 @@ interface HeaderProps {
   readonly onScan: () => void
   readonly onToggleTip?: () => void
   readonly tipActive?: boolean
+  readonly lastUpdated?: number | null
   readonly theme: AppTheme
   readonly onToggleTheme: () => void
+}
+
+function formatLastUpdated(timestamp: number): string {
+  const diffSec = Math.floor((Date.now() - timestamp) / 1000)
+  if (diffSec < 60) return "Synced just now"
+  const diffMin = Math.floor(diffSec / 60)
+  if (diffMin < 60) return `Synced ${diffMin}m ago`
+  const diffHours = Math.floor(diffMin / 60)
+  if (diffHours < 24) return `Synced ${diffHours}h ago`
+  return `Synced ${new Date(timestamp).toLocaleDateString([], { month: "short", day: "numeric" })}`
 }
 
 export function Header({
@@ -15,6 +26,7 @@ export function Header({
   onScan,
   onToggleTip,
   tipActive,
+  lastUpdated,
   theme,
   onToggleTheme
 }: Readonly<HeaderProps>) {
@@ -65,7 +77,7 @@ export function Header({
                 marginTop: 1,
                 letterSpacing: "0.01em"
               }}>
-              75% Attendance & Skip Planner
+              {lastUpdated ? formatLastUpdated(lastUpdated) : "75% Attendance & Skip Planner"}
             </div>
           </div>
         </div>
