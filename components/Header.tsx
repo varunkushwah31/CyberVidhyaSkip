@@ -30,30 +30,30 @@ export function Header({
       }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         {/* Brand Lockup */}
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
           <div
             style={{
-              width: 32,
-              height: 32,
-              borderRadius: 9,
+              width: 30,
+              height: 30,
+              borderRadius: 8,
               background: theme.accentGradient,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               color: "#ffffff",
               boxShadow: isDark
-                ? "0 3px 12px rgba(99, 102, 241, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.25)"
-                : "0 2px 8px rgba(79, 70, 229, 0.28)",
+                ? "0 1px 3px rgba(0, 0, 0, 0.4)"
+                : "0 1px 2px rgba(79, 70, 229, 0.2)",
               flexShrink: 0
             }}>
-            <GraduationCapIcon size={18} weight="fill" />
+            <GraduationCapIcon size={17} weight="fill" />
           </div>
           <div>
             <div
               style={{
-                fontSize: 13.5,
+                fontSize: 13,
                 fontWeight: 700,
-                letterSpacing: "-0.02em",
+                letterSpacing: "-0.015em",
                 color: theme.textPrimary,
                 lineHeight: 1.2
               }}>
@@ -61,13 +61,13 @@ export function Header({
             </div>
             <div
               style={{
-                fontSize: 10.5,
+                fontSize: 10,
                 color: theme.textMuted,
                 fontWeight: 500,
                 marginTop: 1,
                 letterSpacing: "0.01em"
               }}>
-              75% Strict Attendance Planner
+              75% Attendance & Skip Planner
             </div>
           </div>
         </div>

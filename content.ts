@@ -4,8 +4,8 @@ import type { PlasmoCSConfig } from "plasmo";
 
 import { BADGE_CLASS_NAME } from "~constants/theme";
 import { fetchCyberVidhyaAttendance } from "~services/api-service";
-import { scrapeModalHeader } from "~services/modal-scraper";
-import { injectEyeTip, hideEyeTip } from "~services/eye-tip";
+import { hideEyeTip } from "~services/eye-tip";
+import { scrapeModalHeader } from "~services/modal-scraper"
 import { scrapeGeneralDashboardTable } from "~services/table-scraper";
 import type { AttendanceStore } from "~types";
 import { calculateAggregatePercentage } from "~utils/attendance-calculator";
@@ -71,15 +71,6 @@ export function processAttendance(triggerApi = false): number {
     }
 
     saveStoredAttendance(payload)
-    const exactCount = dashboardSubjects.filter((s) => s.actionCount > 0 || (s as any).isExact).length
-    injectEyeTip({
-      subjects: dashboardSubjects,
-      exactCount,
-      totalCount: dashboardSubjects.length,
-      overallPercentage
-    })
-  } else {
-    injectEyeTip()
   }
 
   // 3. Asynchronously fetch latest API counts in background without blocking UI
@@ -87,7 +78,6 @@ export function processAttendance(triggerApi = false): number {
     fetchCyberVidhyaAttendance().then((updated) => {
       if (updated) {
         scrapeGeneralDashboardTable()
-        injectEyeTip()
       }
     })
   }
@@ -133,7 +123,6 @@ if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
   chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
     if (request.action === "SCAN_NOW") {
       const count = processAttendance(true)
-      injectEyeTip()
       sendResponse({ success: true, count, url: window.location.href })
       return true
     }
@@ -152,7 +141,6 @@ function debouncedProcess(): void {
   if (debounceTimer) clearTimeout(debounceTimer)
   debounceTimer = setTimeout(() => {
     processAttendance(false)
-    injectEyeTip()
   }, 200)
 }
 
@@ -222,15 +210,15 @@ function initObserver(): void {
 
 // Execution lifecycle triggers
 function runLifecycle(): void {
+  hideEyeTip()
   processAttendance(true)
-  injectEyeTip()
   initObserver()
 
   // Staggered retries to catch late AJAX data hydration on CyberVidhya dashboards
   ;[300, 700, 1400, 2500, 4500].forEach((delay) => {
     setTimeout(() => {
       processAttendance(false)
-      injectEyeTip()
+      hideEyeTip()
     }, delay)
   })
 }
@@ -243,5 +231,5 @@ if (document.readyState === "loading") {
 
 window.addEventListener("load", () => {
   processAttendance(false)
-  injectEyeTip()
+  hideEyeTip()
 })

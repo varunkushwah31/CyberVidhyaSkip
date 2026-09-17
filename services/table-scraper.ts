@@ -3,7 +3,6 @@ import { compute75Metrics, estimateAttendance } from "~utils/attendance-calculat
 import { cleanElementText, parseInteger, parsePercentage } from "~utils/dom-utils";
 
 import { injectTableBadge } from "./badge-renderer";
-import { injectEyeTip } from "./eye-tip";
 import { cacheCourseData, findCachedCourse, setLastClickedCourse } from "./modal-scraper";
 
 interface TableColumnIndices {
@@ -374,10 +373,6 @@ export function scrapeGeneralDashboardTable(): SubjectAttendance[] {
         message: metrics.message
       })
     })
-
-    if (tableCourseCount > 0) {
-      injectEyeTip(table, tableExactCount, tableCourseCount)
-    }
   })
 
 

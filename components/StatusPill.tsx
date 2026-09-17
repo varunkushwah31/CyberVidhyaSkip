@@ -30,20 +30,19 @@ export function StatusPill({ status, message, theme }: Readonly<StatusPillProps>
       style={{
         display: "inline-flex",
         alignItems: "center",
-        gap: 4.5,
-        padding: "3px 8px",
+        gap: 4,
+        padding: "2px 7px",
         borderRadius: 9999,
-        fontSize: 10.5,
+        fontSize: 10,
         fontWeight: 600,
         letterSpacing: "0.01em",
         backgroundColor: bg,
         color,
         border: `1px solid ${border}`,
         lineHeight: 1.2,
-        boxShadow: "0 1px 2px rgba(0, 0, 0, 0.03)",
         whiteSpace: "nowrap"
       }}>
-      <Icon size={12} weight="bold" />
+      <Icon size={11} weight="bold" />
       <span style={{ fontVariantNumeric: "tabular-nums" }}>{message}</span>
     </span>
   )

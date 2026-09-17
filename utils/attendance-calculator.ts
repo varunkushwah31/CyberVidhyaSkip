@@ -14,7 +14,7 @@ export function compute75Metrics(attended: number, total: number): AttendanceMet
       percentage: 0,
       status: "no_classes",
       actionCount: 0,
-      message: "No classes held",
+      message: "No classes",
       badgeStyles: STATUS_THEMES.no_classes
     }
   }
@@ -30,7 +30,7 @@ export function compute75Metrics(attended: number, total: number): AttendanceMet
       percentage,
       status: "deficit",
       actionCount,
-      message: `Attend next ${actionCount}`,
+      message: `Attend ${actionCount}`,
       badgeStyles: STATUS_THEMES.deficit
     }
   }
@@ -102,7 +102,7 @@ export function estimateAttendance(
       percentage: 0,
       status: "no_classes",
       actionCount: 0,
-      message: "No classes held",
+      message: "No classes",
       badgeStyles: STATUS_THEMES.no_classes
     }
   }

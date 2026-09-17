@@ -1,7 +1,5 @@
-import { ShieldCheckIcon, WarningCircleIcon } from "@phosphor-icons/react"
 import type { AppTheme } from "~constants/theme"
-import type { SubjectAttendance } from "~types"
-
+import type { SubjectAttendance } from "~types";
 interface AttendanceOverviewProps {
   readonly aggregatePercentage: number
   readonly activeSubjects: readonly SubjectAttendance[]
@@ -20,78 +18,69 @@ export function AttendanceOverview({
   const totalMissed = activeSubjects.reduce((acc, s) => acc + s.missed, 0)
   const totalClasses = activeSubjects.reduce((acc, s) => acc + s.total, 0)
 
-  // Circular progress math (radius: 28, circumference: ~175.93)
-  const radius = 28
+  // Strict 75% mathematical calculations
+  let bufferClasses = 0
+  let neededClasses = 0
+  if (totalClasses > 0) {
+    if (isSafe) {
+      bufferClasses = Math.max(0, Math.floor((4 * totalAttended - 3 * totalClasses) / 3))
+    } else {
+      neededClasses = Math.max(1, 3 * totalClasses - 4 * totalAttended)
+    }
+  }
+
+  // Circular gauge math (radius: 26, circumference: ~163.36)
+  const radius = 26
   const circumference = 2 * Math.PI * radius
   const clampedPercent = Math.min(100, Math.max(0, aggregatePercentage))
   const strokeDashoffset = circumference - (clampedPercent / 100) * circumference
 
   const statusTheme = isSafe ? theme.statusColors.surplus : theme.statusColors.deficit
+  const diffPercent = Math.abs(aggregatePercentage - 75).toFixed(1)
 
   return (
     <div
       style={{
         flexShrink: 0,
         backgroundColor: theme.cardBg,
-        margin: "10px 14px 10px 14px",
-        borderRadius: 16,
-        padding: "14px 16px",
+        margin: "8px 14px 8px 14px",
+        borderRadius: 12,
+        padding: "13px 15px",
         border: `1px solid ${theme.cardBorder}`,
         boxShadow: theme.cardShadow,
         position: "relative",
-        overflow: "hidden",
-        transition: "all 0.2s ease"
+        boxSizing: "border-box"
       }}>
-      {/* Ambient background glow */}
-      <div
-        style={{
-          position: "absolute",
-          top: -30,
-          right: -30,
-          width: 140,
-          height: 140,
-          borderRadius: "50%",
-          background: isSafe
-            ? "radial-gradient(circle, rgba(16, 185, 129, 0.12) 0%, transparent 70%)"
-            : "radial-gradient(circle, rgba(244, 63, 94, 0.12) 0%, transparent 70%)",
-          pointerEvents: "none"
-        }}
-      />
-
-      {/* Main Top Section: Circular Ring + Key Metrics */}
+      {/* Primary Row: Gauge + Actionable Skip Intelligence */}
       <div
         style={{
           display: "flex",
           alignItems: "center",
           gap: 14,
-          marginBottom: 12,
-          position: "relative",
-          zIndex: 1
+          marginBottom: 11
         }}>
-        {/* Apple Fitness style Circular Progress Ring */}
-        <div style={{ position: "relative", width: 68, height: 68, flexShrink: 0 }}>
-          <svg width={68} height={68} style={{ transform: "rotate(-90deg)" }}>
-            {/* Background Track */}
+        {/* Precision Progress Ring */}
+        <div style={{ position: "relative", width: 62, height: 62, flexShrink: 0 }}>
+          <svg width={62} height={62} style={{ transform: "rotate(-90deg)" }}>
             <circle
-              cx={34}
-              cy={34}
+              cx={31}
+              cy={31}
               r={radius}
               fill="transparent"
               stroke={theme.progressBarBg}
-              strokeWidth={5.5}
+              strokeWidth={5}
             />
-            {/* Active Progress Ring */}
             <circle
-              cx={34}
-              cy={34}
+              cx={31}
+              cy={31}
               r={radius}
               fill="transparent"
               stroke={statusTheme.solid}
-              strokeWidth={5.5}
+              strokeWidth={5}
               strokeDasharray={circumference}
               strokeDashoffset={strokeDashoffset}
               strokeLinecap="round"
-              style={{ transition: "stroke-dashoffset 0.6s cubic-bezier(0.4, 0, 0.2, 1)" }}
+              style={{ transition: "stroke-dashoffset 0.5s ease" }}
             />
           </svg>
 
@@ -99,132 +88,129 @@ export function AttendanceOverview({
           <div
             style={{
               position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
+              inset: 0,
               display: "flex",
-              flexDirection: "column",
               alignItems: "center",
               justifyContent: "center",
               pointerEvents: "none"
             }}>
             <span
               style={{
-                fontSize: 13.5,
-                fontWeight: 800,
+                fontSize: 13,
+                fontWeight: 700,
                 color: theme.textPrimary,
                 fontVariantNumeric: "tabular-nums",
-                letterSpacing: "-0.02em",
-                lineHeight: 1
+                letterSpacing: "-0.02em"
               }}>
-              {aggregatePercentage}%
+              {aggregatePercentage.toFixed(1)}%
             </span>
           </div>
         </div>
 
-        {/* Right Info Section */}
+        {/* Intelligence Lockup */}
         <div style={{ flex: 1, minWidth: 0 }}>
           <div
             style={{
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
-              marginBottom: 4
+              marginBottom: 3
             }}>
             <span
               style={{
                 fontSize: 9.5,
-                fontWeight: 700,
+                fontWeight: 600,
                 color: theme.textMuted,
                 textTransform: "uppercase",
-                letterSpacing: "0.06em"
+                letterSpacing: "0.05em"
               }}>
-              Overall Attendance
+              Aggregate
             </span>
 
-            {/* Dynamic Status Pill */}
+            {/* Quiet Status Pill */}
             <span
               style={{
                 display: "inline-flex",
                 alignItems: "center",
                 gap: 4,
-                padding: "2.5px 8px",
+                padding: "2px 7px",
                 borderRadius: 9999,
                 backgroundColor: statusTheme.bg,
                 color: statusTheme.text,
                 border: `1px solid ${statusTheme.border}`,
-                fontSize: 10,
-                fontWeight: 700,
-                letterSpacing: "0.02em"
+                fontSize: 9.5,
+                fontWeight: 600,
+                lineHeight: 1.2
               }}>
               <span
                 style={{
-                  width: 5,
-                  height: 5,
+                  width: 4.5,
+                  height: 4.5,
                   borderRadius: "50%",
-                  backgroundColor: statusTheme.solid,
-                  boxShadow: `0 0 5px ${statusTheme.solid}`
+                  backgroundColor: statusTheme.solid
                 }}
               />
-              {isSafe ? (
-                <>
-                  <ShieldCheckIcon size={11} weight="bold" />
-                  <span>SAFE ZONE</span>
-                </>
-              ) : (
-                <>
-                  <WarningCircleIcon size={11} weight="bold" />
-                  <span>AT RISK</span>
-                </>
-              )}
+              <span>
+                {isSafe ? `Safe (+${diffPercent}%)` : `Deficit (-${diffPercent}%)`}
+              </span>
             </span>
           </div>
 
+          {/* Decisive Primary Message */}
           <div
             style={{
-              fontSize: 18,
-              fontWeight: 800,
-              letterSpacing: "-0.02em",
-              color: statusTheme.text,
-              fontVariantNumeric: "tabular-nums",
-              lineHeight: 1.2
+              fontSize: 14.5,
+              fontWeight: 700,
+              letterSpacing: "-0.015em",
+              color: theme.textPrimary,
+              lineHeight: 1.25
             }}>
-            {aggregatePercentage}%{" "}
-            <span
-              style={{
-                fontSize: 11,
-                fontWeight: 500,
-                color: theme.textMuted,
-                letterSpacing: 0
-              }}>
-              (Target: 75%)
-            </span>
+            {isSafe ? (
+              bufferClasses > 0 ? (
+                <span>
+                  Can skip{" "}
+                  <strong style={{ color: statusTheme.text }}>
+                    {bufferClasses} class{bufferClasses > 1 ? "es" : ""}
+                  </strong>
+                </span>
+              ) : (
+                <span style={{ color: theme.textPrimary }}>
+                  On 75% boundary
+                </span>
+              )
+            ) : (
+              <span>
+                Attend next{" "}
+                <strong style={{ color: statusTheme.text }}>
+                  {neededClasses} class{neededClasses > 1 ? "es" : ""}
+                </strong>
+              </span>
+            )}
           </div>
 
           <div
             style={{
-              fontSize: 11,
+              fontSize: 10.5,
               color: theme.textSecondary,
               marginTop: 2,
-              fontWeight: 500
+              fontWeight: 400
             }}>
-            {isSafe ? "Meeting minimum 75% attendance criterion" : `${detentionCount} course(s) require urgent attendance`}
+            {isSafe
+              ? "Maintains mandatory 75% attendance"
+              : `${detentionCount} course${detentionCount > 1 ? "s" : ""} currently below 75%`}
           </div>
         </div>
       </div>
 
-      {/* Unified Stats Bar with hairline dividers */}
+      {/* 4-Column Metric Strip with Hairline Dividers */}
       <div
         style={{
           display: "flex",
           alignItems: "center",
           backgroundColor: theme.metricBg,
           border: `1px solid ${theme.metricBorder}`,
-          borderRadius: 10,
-          padding: "7px 4px",
-          position: "relative",
-          zIndex: 1
+          borderRadius: 8,
+          padding: "6px 2px"
         }}>
         {/* Attended */}
         <div style={{ flex: 1, textAlign: "center" }}>
@@ -240,7 +226,7 @@ export function AttendanceOverview({
           </div>
           <div
             style={{
-              fontSize: 13.5,
+              fontSize: 13,
               fontWeight: 700,
               color: theme.textPrimary,
               marginTop: 1,
@@ -250,8 +236,7 @@ export function AttendanceOverview({
           </div>
         </div>
 
-        {/* Divider */}
-        <div style={{ width: 1, height: 20, backgroundColor: theme.metricBorder }} />
+        <div style={{ width: 1, height: 16, backgroundColor: theme.divider }} />
 
         {/* Missed */}
         <div style={{ flex: 1, textAlign: "center" }}>
@@ -267,7 +252,7 @@ export function AttendanceOverview({
           </div>
           <div
             style={{
-              fontSize: 13.5,
+              fontSize: 13,
               fontWeight: 700,
               color: totalMissed > 0 ? theme.statusColors.deficit.solid : theme.textPrimary,
               marginTop: 1,
@@ -277,10 +262,9 @@ export function AttendanceOverview({
           </div>
         </div>
 
-        {/* Divider */}
-        <div style={{ width: 1, height: 20, backgroundColor: theme.metricBorder }} />
+        <div style={{ width: 1, height: 16, backgroundColor: theme.divider }} />
 
-        {/* Total */}
+        {/* Total Conducted */}
         <div style={{ flex: 1, textAlign: "center" }}>
           <div
             style={{
@@ -294,7 +278,7 @@ export function AttendanceOverview({
           </div>
           <div
             style={{
-              fontSize: 13.5,
+              fontSize: 13,
               fontWeight: 700,
               color: theme.textPrimary,
               marginTop: 1,
@@ -304,8 +288,7 @@ export function AttendanceOverview({
           </div>
         </div>
 
-        {/* Divider */}
-        <div style={{ width: 1, height: 20, backgroundColor: theme.metricBorder }} />
+        <div style={{ width: 1, height: 16, backgroundColor: theme.divider }} />
 
         {/* At Risk */}
         <div style={{ flex: 1, textAlign: "center" }}>
@@ -321,12 +304,9 @@ export function AttendanceOverview({
           </div>
           <div
             style={{
-              fontSize: 13.5,
+              fontSize: 13,
               fontWeight: 700,
-              color:
-                detentionCount > 0
-                  ? theme.statusColors.deficit.solid
-                  : theme.statusColors.surplus.solid,
+              color: detentionCount > 0 ? theme.statusColors.deficit.solid : theme.textMuted,
               marginTop: 1,
               fontVariantNumeric: "tabular-nums"
             }}>
@@ -337,4 +317,3 @@ export function AttendanceOverview({
     </div>
   )
 }
-

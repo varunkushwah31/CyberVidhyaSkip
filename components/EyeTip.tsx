@@ -55,34 +55,31 @@ export function EyeTip({ activeTabId, forceVisible = false, onClose, theme }: Re
         gap: 10,
         margin: "8px 14px 2px 14px",
         padding: "10px 12px",
-        borderRadius: 12,
+        borderRadius: 10,
         backgroundColor: cardBg,
         border: `1px solid ${cardBorder}`,
-        boxShadow: "0 2px 8px -2px rgba(99, 102, 241, 0.12)",
-        position: "relative",
-        transition: "all 0.2s ease"
+        position: "relative"
       }}>
       <div
         style={{
           flexShrink: 0,
-          width: 26,
-          height: 26,
-          borderRadius: 8,
-          background: theme?.accentGradient || "linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)",
+          width: 24,
+          height: 24,
+          borderRadius: 6,
+          background: theme?.accentGradient || "linear-gradient(135deg, #4f46e5 0%, #6366f1 100%)",
           color: "#ffffff",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          marginTop: 1,
-          boxShadow: "0 2px 6px rgba(99, 102, 241, 0.25)"
+          marginTop: 1
         }}>
-        <EyeIcon size={14} weight="bold" />
+        <EyeIcon size={13} weight="bold" />
       </div>
 
       <div style={{ flex: 1, minWidth: 0 }}>
         <div
           style={{
-            fontSize: 11.5,
+            fontSize: 11,
             fontWeight: 700,
             color: titleColor,
             letterSpacing: "-0.01em"
@@ -91,14 +88,14 @@ export function EyeTip({ activeTabId, forceVisible = false, onClose, theme }: Re
         </div>
         <p
           style={{
-            margin: "3px 0 0 0",
-            fontSize: 11,
-            lineHeight: 1.45,
+            margin: "2px 0 0 0",
+            fontSize: 10.5,
+            lineHeight: 1.4,
             color: bodyColor
           }}>
-          Lecture and duty leave (OD) counts are verified from the{" "}
-          <strong style={{ color: accentColor }}>My Attendance</strong> page or by
-          clicking each course's <strong style={{ color: titleColor }}>eye icon (👁️)</strong>.
+          Lecture and duty leave (OD) logs are verified from{" "}
+          <strong style={{ color: accentColor }}>My Attendance</strong> or by
+          clicking each course's <strong style={{ color: titleColor }}>eye icon</strong>.
         </p>
       </div>
 

@@ -112,11 +112,11 @@ export function CourseCard({ subject, theme }: Readonly<CourseCardProps>) {
       </div>
 
       {/* Progress Bar with 75% target benchmark line */}
-      <div style={{ position: "relative", marginBottom: 9 }}>
+      <div style={{ position: "relative", marginBottom: 8 }}>
         <div
           style={{
             position: "relative",
-            height: 6,
+            height: 4,
             backgroundColor: theme.progressBarBg,
             borderRadius: 9999,
             overflow: "hidden"
@@ -127,8 +127,7 @@ export function CourseCard({ subject, theme }: Readonly<CourseCardProps>) {
               height: "100%",
               background: currentStatusColors.gradient,
               borderRadius: 9999,
-              transition: "width 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-              boxShadow: isSafe ? "0 1px 4px rgba(16, 185, 129, 0.25)" : "none"
+              transition: "width 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
             }}
           />
         </div>
@@ -141,7 +140,7 @@ export function CourseCard({ subject, theme }: Readonly<CourseCardProps>) {
             bottom: -2,
             width: 1.5,
             backgroundColor: theme.textMuted,
-            opacity: 0.5,
+            opacity: 0.45,
             borderRadius: 1,
             zIndex: 2
           }}
