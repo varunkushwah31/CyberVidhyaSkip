@@ -29,14 +29,8 @@ export function AttendanceOverview({
     }
   }
 
-  // Circular gauge math (radius: 26, circumference: ~163.36)
-  const radius = 26
-  const circumference = 2 * Math.PI * radius
-  const clampedPercent = Math.min(100, Math.max(0, aggregatePercentage))
-  const strokeDashoffset = circumference - (clampedPercent / 100) * circumference
-
   const statusTheme = isSafe ? theme.statusColors.surplus : theme.statusColors.deficit
-  const diffPercent = Math.abs(aggregatePercentage - 75).toFixed(1)
+  const progressRatio = Math.min(1, Math.max(0, aggregatePercentage / 100))
 
   return (
     <div
@@ -48,120 +42,23 @@ export function AttendanceOverview({
         padding: "13px 15px",
         border: `1px solid ${theme.cardBorder}`,
         boxShadow: theme.cardShadow,
-        position: "relative",
         boxSizing: "border-box"
       }}>
-      {/* Primary Row: Gauge + Actionable Skip Intelligence */}
+      {/* Top Row: Direct Action Verdict + Percentage Pill */}
       <div
         style={{
           display: "flex",
-          alignItems: "center",
-          gap: 14,
-          marginBottom: 11
+          alignItems: "flex-start",
+          justifyContent: "space-between",
+          gap: 12
         }}>
-        {/* Precision Progress Ring */}
-        <div style={{ position: "relative", width: 62, height: 62, flexShrink: 0 }}>
-          <svg width={62} height={62} style={{ transform: "rotate(-90deg)" }}>
-            <circle
-              cx={31}
-              cy={31}
-              r={radius}
-              fill="transparent"
-              stroke={theme.progressBarBg}
-              strokeWidth={5}
-            />
-            <circle
-              cx={31}
-              cy={31}
-              r={radius}
-              fill="transparent"
-              stroke={statusTheme.solid}
-              strokeWidth={5}
-              strokeDasharray={circumference}
-              strokeDashoffset={strokeDashoffset}
-              strokeLinecap="round"
-              style={{ transition: "stroke-dashoffset 0.5s ease" }}
-            />
-          </svg>
-
-          {/* Centered Percentage inside Ring */}
-          <div
-            style={{
-              position: "absolute",
-              inset: 0,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              pointerEvents: "none"
-            }}>
-            <span
-              style={{
-                fontSize: 13,
-                fontWeight: 700,
-                color: theme.textPrimary,
-                fontVariantNumeric: "tabular-nums",
-                letterSpacing: "-0.02em"
-              }}>
-              {aggregatePercentage.toFixed(1)}%
-            </span>
-          </div>
-        </div>
-
-        {/* Intelligence Lockup */}
         <div style={{ flex: 1, minWidth: 0 }}>
+          {/* Primary Action Insight */}
           <div
             style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              marginBottom: 3
-            }}>
-            <span
-              style={{
-                fontSize: 9.5,
-                fontWeight: 600,
-                color: theme.textMuted,
-                textTransform: "uppercase",
-                letterSpacing: "0.05em"
-              }}>
-              Aggregate
-            </span>
-
-            {/* Quiet Status Pill */}
-            <span
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 4,
-                padding: "2px 7px",
-                borderRadius: 9999,
-                backgroundColor: statusTheme.bg,
-                color: statusTheme.text,
-                border: `1px solid ${statusTheme.border}`,
-                fontSize: 9.5,
-                fontWeight: 600,
-                lineHeight: 1.2
-              }}>
-              <span
-                style={{
-                  width: 4.5,
-                  height: 4.5,
-                  borderRadius: "50%",
-                  backgroundColor: statusTheme.solid
-                }}
-              />
-              <span>
-                {isSafe ? `Safe (+${diffPercent}%)` : `Deficit (-${diffPercent}%)`}
-              </span>
-            </span>
-          </div>
-
-          {/* Decisive Primary Message */}
-          <div
-            style={{
-              fontSize: 14.5,
+              fontSize: 16,
               fontWeight: 700,
-              letterSpacing: "-0.015em",
+              letterSpacing: "-0.02em",
               color: theme.textPrimary,
               lineHeight: 1.25
             }}>
@@ -169,150 +66,110 @@ export function AttendanceOverview({
               bufferClasses > 0 ? (
                 <span>
                   Can skip{" "}
-                  <strong style={{ color: statusTheme.text }}>
-                    {bufferClasses} class{bufferClasses > 1 ? "es" : ""}
+                  <strong style={{ color: statusTheme.solid, fontWeight: 700 }}>
+                    {bufferClasses} {bufferClasses === 1 ? "class" : "classes"}
                   </strong>
                 </span>
               ) : (
-                <span style={{ color: theme.textPrimary }}>
-                  On 75% boundary
-                </span>
+                <span>On 75% boundary</span>
               )
             ) : (
               <span>
                 Attend next{" "}
-                <strong style={{ color: statusTheme.text }}>
-                  {neededClasses} class{neededClasses > 1 ? "es" : ""}
+                <strong style={{ color: statusTheme.solid, fontWeight: 700 }}>
+                  {neededClasses} {neededClasses === 1 ? "class" : "classes"}
                 </strong>
               </span>
             )}
           </div>
 
+          {/* Contextual Status Subtitle */}
           <div
             style={{
-              fontSize: 10.5,
+              fontSize: 11,
               color: theme.textSecondary,
-              marginTop: 2,
-              fontWeight: 400
+              marginTop: 3,
+              fontWeight: 400,
+              lineHeight: 1.4
             }}>
             {isSafe
-              ? "Maintains mandatory 75% attendance"
-              : `${detentionCount} course${detentionCount > 1 ? "s" : ""} currently below 75%`}
+              ? `${aggregatePercentage.toFixed(1)}% aggregate · 75% requirement met`
+              : `${aggregatePercentage.toFixed(1)}% aggregate · ${detentionCount} course${
+                  detentionCount > 1 ? "s" : ""
+                } below 75%`}
           </div>
         </div>
+
+        {/* Clean Percentage Badge */}
+        <span
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            padding: "3px 8px",
+            borderRadius: 9999,
+            backgroundColor: statusTheme.bg,
+            color: statusTheme.text,
+            border: `1px solid ${statusTheme.border}`,
+            fontSize: 11.5,
+            fontWeight: 700,
+            fontVariantNumeric: "tabular-nums",
+            letterSpacing: "-0.01em",
+            flexShrink: 0
+          }}>
+          {aggregatePercentage.toFixed(1)}%
+        </span>
       </div>
 
-      {/* 4-Column Metric Strip with Hairline Dividers */}
+      {/* Slim, elegant progress track */}
+      <div
+        style={{
+          position: "relative",
+          height: 4,
+          backgroundColor: theme.progressBarBg,
+          borderRadius: 9999,
+          overflow: "hidden",
+          marginTop: 11,
+          marginBottom: 9
+        }}>
+        <div
+          style={{
+            width: "100%",
+            height: "100%",
+            backgroundColor: statusTheme.solid,
+            borderRadius: 9999,
+            transformOrigin: "left",
+            transform: `scaleX(${progressRatio})`,
+            transition: "transform 0.3s ease-out"
+          }}
+        />
+      </div>
+
+      {/* Balanced meta stats line */}
       <div
         style={{
           display: "flex",
+          justifyContent: "space-between",
           alignItems: "center",
-          backgroundColor: theme.metricBg,
-          border: `1px solid ${theme.metricBorder}`,
-          borderRadius: 8,
-          padding: "6px 2px"
+          fontSize: 10.5,
+          color: theme.textMuted,
+          fontVariantNumeric: "tabular-nums"
         }}>
-        {/* Attended */}
-        <div style={{ flex: 1, textAlign: "center" }}>
-          <div
-            style={{
-              fontSize: 8.5,
-              fontWeight: 600,
-              color: theme.textMuted,
-              textTransform: "uppercase",
-              letterSpacing: "0.04em"
-            }}>
-            Attended
-          </div>
-          <div
-            style={{
-              fontSize: 13,
-              fontWeight: 700,
-              color: theme.textPrimary,
-              marginTop: 1,
-              fontVariantNumeric: "tabular-nums"
-            }}>
-            {totalAttended}
-          </div>
-        </div>
-
-        <div style={{ width: 1, height: 16, backgroundColor: theme.divider }} />
-
-        {/* Missed */}
-        <div style={{ flex: 1, textAlign: "center" }}>
-          <div
-            style={{
-              fontSize: 8.5,
-              fontWeight: 600,
-              color: theme.textMuted,
-              textTransform: "uppercase",
-              letterSpacing: "0.04em"
-            }}>
-            Missed
-          </div>
-          <div
-            style={{
-              fontSize: 13,
-              fontWeight: 700,
-              color: totalMissed > 0 ? theme.statusColors.deficit.solid : theme.textPrimary,
-              marginTop: 1,
-              fontVariantNumeric: "tabular-nums"
-            }}>
-            {totalMissed}
-          </div>
-        </div>
-
-        <div style={{ width: 1, height: 16, backgroundColor: theme.divider }} />
-
-        {/* Total Conducted */}
-        <div style={{ flex: 1, textAlign: "center" }}>
-          <div
-            style={{
-              fontSize: 8.5,
-              fontWeight: 600,
-              color: theme.textMuted,
-              textTransform: "uppercase",
-              letterSpacing: "0.04em"
-            }}>
-            Total
-          </div>
-          <div
-            style={{
-              fontSize: 13,
-              fontWeight: 700,
-              color: theme.textPrimary,
-              marginTop: 1,
-              fontVariantNumeric: "tabular-nums"
-            }}>
-            {totalClasses}
-          </div>
-        </div>
-
-        <div style={{ width: 1, height: 16, backgroundColor: theme.divider }} />
-
-        {/* At Risk */}
-        <div style={{ flex: 1, textAlign: "center" }}>
-          <div
-            style={{
-              fontSize: 8.5,
-              fontWeight: 600,
-              color: theme.textMuted,
-              textTransform: "uppercase",
-              letterSpacing: "0.04em"
-            }}>
-            At Risk
-          </div>
-          <div
-            style={{
-              fontSize: 13,
-              fontWeight: 700,
-              color: detentionCount > 0 ? theme.statusColors.deficit.solid : theme.textMuted,
-              marginTop: 1,
-              fontVariantNumeric: "tabular-nums"
-            }}>
-            {detentionCount}
-          </div>
-        </div>
+        <span>
+          <strong style={{ color: theme.textSecondary, fontWeight: 600 }}>{totalAttended}</strong> attended of{" "}
+          <strong style={{ color: theme.textSecondary, fontWeight: 600 }}>{totalClasses}</strong> total
+        </span>
+        <span>
+          {totalMissed > 0 ? (
+            <span>
+              <strong style={{ color: detentionCount > 0 ? theme.statusColors.deficit.solid : theme.textSecondary, fontWeight: 600 }}>
+                {totalMissed}
+              </strong>{" "}
+              missed
+            </span>
+          ) : (
+            <span>0 missed</span>
+          )}
+        </span>
       </div>
     </div>
   )

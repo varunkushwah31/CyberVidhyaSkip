@@ -64,7 +64,7 @@ export function CourseList({
             <EyeIcon size={14} weight="bold" />
           </div>
           <span>
-            Click any course's <strong style={{ color: theme.textPrimary }}>eye icon (👁️)</strong> or open{" "}
+            Click any course's <strong style={{ color: theme.textPrimary }}>eye icon</strong> or open{" "}
             <strong style={{ color: theme.accent }}>My Attendance</strong> to sync exact lecture breakdown.
           </span>
         </div>
@@ -129,13 +129,12 @@ export function CourseList({
           width: 44,
           height: 44,
           borderRadius: 12,
-          background: theme.accentGradient,
+          backgroundColor: theme.accent,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           margin: "0 auto 12px auto",
-          color: "#ffffff",
-          boxShadow: "0 4px 14px rgba(99, 102, 241, 0.35)"
+          color: "#ffffff"
         }}>
         <BookOpenIcon size={22} weight="bold" />
       </div>
@@ -167,15 +166,21 @@ export function CourseList({
           onClick={onReloadTab}
           style={{
             padding: "8px 18px",
-            background: theme.accentGradient,
+            backgroundColor: theme.accent,
             color: "#ffffff",
             border: "none",
             borderRadius: 8,
             fontSize: 11.5,
             fontWeight: 600,
             cursor: "pointer",
-            boxShadow: "0 2px 8px rgba(99, 102, 241, 0.35)",
-            transition: "all 0.15s ease"
+            boxShadow: "0 1px 2px rgba(0, 0, 0, 0.1)",
+            transition: "opacity 0.15s ease"
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.opacity = "0.9"
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.opacity = "1"
           }}>
           Reload Portal Tab
         </button>

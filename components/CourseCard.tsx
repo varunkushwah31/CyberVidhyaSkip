@@ -21,97 +21,91 @@ export function CourseCard({ subject, theme }: Readonly<CourseCardProps>) {
   }
 
   const currentStatusColors = theme.statusColors[statusKey]
-  const progressWidth = Math.min(100, Math.max(0, subject.percentage))
+  const progressRatio = Math.min(1, Math.max(0, subject.percentage / 100))
 
   return (
     <div
       style={{
         backgroundColor: theme.cardBg,
         borderRadius: 12,
-        padding: "11px 13px",
+        padding: "12px 14px",
         marginBottom: 8,
         boxShadow: theme.cardShadow,
         border: `1px solid ${theme.cardBorder}`,
-        transition: "all 0.15s ease",
-        position: "relative"
+        transition: "border-color 0.15s ease",
+        boxSizing: "border-box"
       }}
       onMouseEnter={(e) => {
         e.currentTarget.style.borderColor = theme.cardHoverBorder
-        e.currentTarget.style.transform = "translateY(-1px)"
       }}
       onMouseLeave={(e) => {
         e.currentTarget.style.borderColor = theme.cardBorder
-        e.currentTarget.style.transform = "none"
       }}>
-      {/* Top Meta row */}
+      {/* Top Row: Course Identity + Status Pill */}
       <div
         style={{
           display: "flex",
           justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 7
+          alignItems: "flex-start",
+          gap: 10,
+          marginBottom: 9
         }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          {subject.courseCode && (
-            <span
-              style={{
-                fontSize: 10,
-                fontWeight: 700,
-                padding: "2px 7px",
-                borderRadius: 6,
-                backgroundColor: theme.metricBg,
-                color: theme.textPrimary,
-                border: `1px solid ${theme.metricBorder}`,
-                letterSpacing: "0.04em",
-                fontFamily:
-                  'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace'
-              }}>
-              {subject.courseCode}
-            </span>
-          )}
-          {(subject.component || subject.credit !== undefined) && (
-            <span
-              style={{
-                fontSize: 10.5,
-                fontWeight: 500,
-                color: theme.textSecondary,
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 4
-              }}>
-              {subject.component && (
-                <span>
-                  {subject.component.charAt(0).toUpperCase() +
-                    subject.component.slice(1).toLowerCase()}
-                </span>
-              )}
-              {subject.component && subject.credit !== undefined && (
-                <span style={{ color: theme.textMuted }}>•</span>
-              )}
-              {subject.credit !== undefined && (
-                <span style={{ color: theme.textMuted }}>{subject.credit} Cr</span>
-              )}
-            </span>
-          )}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          {/* Course Name */}
+          <div
+            style={{
+              fontSize: 13,
+              fontWeight: 600,
+              color: theme.textPrimary,
+              lineHeight: 1.35,
+              letterSpacing: "-0.015em"
+            }}>
+            {subject.subjectName}
+          </div>
+
+          {/* Clean Meta Line */}
+          <div
+            style={{
+              fontSize: 10.5,
+              color: theme.textSecondary,
+              marginTop: 3,
+              display: "flex",
+              alignItems: "center",
+              gap: 5
+            }}>
+            {subject.courseCode && (
+              <span
+                style={{
+                  fontFamily:
+                    'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+                  fontWeight: 600,
+                  color: theme.textPrimary
+                }}>
+                {subject.courseCode}
+              </span>
+            )}
+            {subject.courseCode && (subject.component || subject.credit !== undefined) && (
+              <span style={{ color: theme.textMuted }}>·</span>
+            )}
+            {subject.component && (
+              <span>
+                {subject.component.charAt(0).toUpperCase() +
+                  subject.component.slice(1).toLowerCase()}
+              </span>
+            )}
+            {subject.component && subject.credit !== undefined && (
+              <span style={{ color: theme.textMuted }}>·</span>
+            )}
+            {subject.credit !== undefined && (
+              <span style={{ color: theme.textMuted }}>{subject.credit} Cr</span>
+            )}
+          </div>
         </div>
 
         <StatusPill status={subject.status} message={subject.message} theme={theme} />
       </div>
 
-      {/* Subject Name */}
-      <div
-        style={{
-          fontSize: 13,
-          fontWeight: 600,
-          color: theme.textPrimary,
-          marginBottom: 9,
-          lineHeight: 1.35,
-          letterSpacing: "-0.015em"
-        }}>
-        {subject.subjectName}
-      </div>
-
-      {/* Progress Bar with 75% target benchmark line */}
+      {/* Slim Progress Track with 75% Requirement Line */}
       <div style={{ position: "relative", marginBottom: 8 }}>
         <div
           style={{
@@ -123,15 +117,17 @@ export function CourseCard({ subject, theme }: Readonly<CourseCardProps>) {
           }}>
           <div
             style={{
-              width: `${progressWidth}%`,
+              width: "100%",
               height: "100%",
-              background: currentStatusColors.gradient,
+              backgroundColor: currentStatusColors.solid,
               borderRadius: 9999,
-              transition: "width 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
+              transformOrigin: "left",
+              transform: `scaleX(${progressRatio})`,
+              transition: "transform 0.25s ease-out"
             }}
           />
         </div>
-        {/* 75% Target Marker Notch */}
+        {/* 75% Target Marker */}
         <div
           style={{
             position: "absolute",
@@ -140,7 +136,7 @@ export function CourseCard({ subject, theme }: Readonly<CourseCardProps>) {
             bottom: -2,
             width: 1.5,
             backgroundColor: theme.textMuted,
-            opacity: 0.45,
+            opacity: 0.4,
             borderRadius: 1,
             zIndex: 2
           }}
@@ -154,8 +150,9 @@ export function CourseCard({ subject, theme }: Readonly<CourseCardProps>) {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          fontSize: 11,
-          color: theme.textSecondary
+          fontSize: 10.5,
+          color: theme.textSecondary,
+          fontVariantNumeric: "tabular-nums"
         }}>
         <div>
           {subject.total > 0 ? (
@@ -164,22 +161,22 @@ export function CourseCard({ subject, theme }: Readonly<CourseCardProps>) {
               <strong
                 style={{
                   color: theme.textPrimary,
-                  fontWeight: 700,
-                  fontVariantNumeric: "tabular-nums"
+                  fontWeight: 600
                 }}>
                 {subject.attended}
               </strong>{" "}
-              of{" "}
-              <span style={{ fontVariantNumeric: "tabular-nums" }}>{subject.total}</span>
+              of {subject.total}
               {subject.missed > 0 && (
                 <span
                   style={{
-                    color: theme.statusColors.deficit.solid,
-                    fontWeight: 600,
-                    marginLeft: 6,
-                    fontVariantNumeric: "tabular-nums"
+                    color:
+                      subject.status === "deficit"
+                        ? theme.statusColors.deficit.solid
+                        : theme.textMuted,
+                    fontWeight: 500,
+                    marginLeft: 6
                   }}>
-                  • {subject.missed} missed
+                  · {subject.missed} missed
                 </span>
               )}
             </span>
@@ -190,11 +187,10 @@ export function CourseCard({ subject, theme }: Readonly<CourseCardProps>) {
 
         <span
           style={{
-            fontSize: 13.5,
-            fontWeight: 800,
+            fontSize: 12,
+            fontWeight: 700,
             color: currentStatusColors.solid,
-            fontVariantNumeric: "tabular-nums",
-            letterSpacing: "-0.02em"
+            letterSpacing: "-0.01em"
           }}>
           {subject.percentage}%
         </span>

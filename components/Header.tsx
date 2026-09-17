@@ -36,14 +36,12 @@ export function Header({
               width: 30,
               height: 30,
               borderRadius: 8,
-              background: theme.accentGradient,
+              backgroundColor: theme.accent,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               color: "#ffffff",
-              boxShadow: isDark
-                ? "0 1px 3px rgba(0, 0, 0, 0.4)"
-                : "0 1px 2px rgba(79, 70, 229, 0.2)",
+              boxShadow: "0 1px 2px rgba(0, 0, 0, 0.12)",
               flexShrink: 0
             }}>
             <GraduationCapIcon size={17} weight="fill" />

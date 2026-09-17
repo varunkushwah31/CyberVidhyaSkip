@@ -31,3 +31,5 @@ dist/
 
 # typescript
 .tsbuildinfo
+.agents
+skills-lock.json

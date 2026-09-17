@@ -132,7 +132,7 @@ export const THEMES: Record<ThemeMode, AppTheme> = {
     segmentActiveShadow: "0 1px 2px rgba(0, 0, 0, 0.3)",
     segmentInactiveText: "#94a3b8",
     accent: "#6366f1",
-    accentGradient: "linear-gradient(135deg, #4f46e5 0%, #6366f1 100%)",
+    accentGradient: "#4f46e5",
     headerBg: "rgba(12, 16, 23, 0.96)",
     headerBorder: "rgba(255, 255, 255, 0.07)",
     stickyBg: "rgba(12, 16, 23, 0.94)",
@@ -143,28 +143,28 @@ export const THEMES: Record<ThemeMode, AppTheme> = {
         bg: "rgba(16, 185, 129, 0.1)",
         text: "#34d399",
         border: "rgba(52, 211, 153, 0.2)",
-        gradient: "linear-gradient(90deg, #10b981 0%, #059669 100%)",
+        gradient: "#10b981",
         solid: "#10b981"
       },
       boundary: {
         bg: "rgba(245, 158, 11, 0.1)",
         text: "#fbbf24",
         border: "rgba(251, 191, 36, 0.2)",
-        gradient: "linear-gradient(90deg, #f59e0b 0%, #d97706 100%)",
+        gradient: "#f59e0b",
         solid: "#f59e0b"
       },
       deficit: {
         bg: "rgba(244, 63, 94, 0.1)",
         text: "#fb7185",
         border: "rgba(251, 113, 133, 0.2)",
-        gradient: "linear-gradient(90deg, #f43f5e 0%, #e11d48 100%)",
+        gradient: "#f43f5e",
         solid: "#f43f5e"
       },
       no_classes: {
         bg: "rgba(148, 163, 184, 0.08)",
         text: "#94a3b8",
         border: "rgba(148, 163, 184, 0.15)",
-        gradient: "linear-gradient(90deg, #64748b 0%, #475569 100%)",
+        gradient: "#64748b",
         solid: "#64748b"
       }
     }
@@ -193,7 +193,7 @@ export const THEMES: Record<ThemeMode, AppTheme> = {
     segmentActiveShadow: "0 1px 3px rgba(15, 23, 42, 0.08)",
     segmentInactiveText: "#64748b",
     accent: "#4f46e5",
-    accentGradient: "linear-gradient(135deg, #4338ca 0%, #4f46e5 100%)",
+    accentGradient: "#4f46e5",
     headerBg: "rgba(255, 255, 255, 0.96)",
     headerBorder: "#e2e8f0",
     stickyBg: "rgba(248, 250, 252, 0.94)",
@@ -204,28 +204,28 @@ export const THEMES: Record<ThemeMode, AppTheme> = {
         bg: "#ecfdf5",
         text: "#065f46",
         border: "#a7f3d0",
-        gradient: "linear-gradient(90deg, #10b981 0%, #059669 100%)",
+        gradient: "#059669",
         solid: "#059669"
       },
       boundary: {
         bg: "#fffbeb",
         text: "#92400e",
         border: "#fde68a",
-        gradient: "linear-gradient(90deg, #f59e0b 0%, #d97706 100%)",
+        gradient: "#d97706",
         solid: "#d97706"
       },
       deficit: {
         bg: "#fff1f2",
         text: "#9f1239",
         border: "#fecdd3",
-        gradient: "linear-gradient(90deg, #f43f5e 0%, #e11d48 100%)",
+        gradient: "#e11d48",
         solid: "#e11d48"
       },
       no_classes: {
         bg: "#f1f5f9",
         text: "#475569",
         border: "#cbd5e1",
-        gradient: "linear-gradient(90deg, #94a3b8 0%, #64748b 100%)",
+        gradient: "#64748b",
         solid: "#64748b"
       }
     }

@@ -66,7 +66,7 @@ export function EyeTip({ activeTabId, forceVisible = false, onClose, theme }: Re
           width: 24,
           height: 24,
           borderRadius: 6,
-          background: theme?.accentGradient || "linear-gradient(135deg, #4f46e5 0%, #6366f1 100%)",
+          backgroundColor: accentColor,
           color: "#ffffff",
           display: "flex",
           alignItems: "center",
