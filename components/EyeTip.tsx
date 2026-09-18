@@ -1,4 +1,4 @@
-import { EyeIcon, XIcon } from "@phosphor-icons/react"
+import { ArrowSquareOutIcon, EyeIcon, XIcon } from "@phosphor-icons/react"
 import { useEffect, useState } from "react"
 import type { AppTheme } from "~constants/theme"
 import { dismissEyeTip, getEyeTipDismissed } from "~utils/storage"
@@ -7,10 +7,11 @@ interface EyeTipProps {
   readonly activeTabId: number | null
   readonly forceVisible?: boolean
   readonly onClose?: () => void
+  readonly onOpenAttendance?: () => void
   readonly theme?: AppTheme
 }
 
-export function EyeTip({ activeTabId, forceVisible = false, onClose, theme }: Readonly<EyeTipProps>) {
+export function EyeTip({ activeTabId, forceVisible = false, onClose, onOpenAttendance, theme }: Readonly<EyeTipProps>) {
   const [ready, setReady] = useState(false)
   const [dismissed, setDismissed] = useState(true)
 
@@ -84,19 +85,58 @@ export function EyeTip({ activeTabId, forceVisible = false, onClose, theme }: Re
             color: titleColor,
             letterSpacing: "-0.01em"
           }}>
-          Accurate Attendance Tracking
+          Accurate Attendance Data
         </div>
         <p
           style={{
-            margin: "2px 0 0 0",
+            margin: "3px 0 6px 0",
             fontSize: 10.5,
-            lineHeight: 1.4,
+            lineHeight: 1.45,
             color: bodyColor
           }}>
-          Lecture and duty leave (OD) logs are verified from{" "}
-          <strong style={{ color: accentColor }}>My Attendance</strong> or by
-          clicking each course's <strong style={{ color: titleColor }}>eye icon</strong>.
+          Go to{" "}
+          <a
+            href="https://kiet.cybervidya.net/attendance/my-attendance"
+            onClick={(e) => {
+              if (onOpenAttendance) {
+                e.preventDefault()
+                onOpenAttendance()
+              }
+            }}
+            target="_blank"
+            rel="noreferrer"
+            style={{
+              color: accentColor,
+              fontWeight: 600,
+              textDecoration: "underline",
+              cursor: "pointer"
+            }}>
+            https://kiet.cybervidya.net/attendance/my-attendance
+          </a>{" "}
+          for getting one-time accurate data (verified lecture breakdown & OD logs).
         </p>
+
+        {onOpenAttendance && (
+          <button
+            onClick={onOpenAttendance}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 5,
+              padding: "3px 8px",
+              borderRadius: 6,
+              border: `1px solid ${cardBorder}`,
+              backgroundColor: isDark ? "rgba(99, 102, 241, 0.2)" : "#e0e7ff",
+              color: accentColor,
+              fontSize: 10,
+              fontWeight: 600,
+              cursor: "pointer",
+              transition: "all 0.15s ease"
+            }}>
+            <span>Open My Attendance</span>
+            <ArrowSquareOutIcon size={11} weight="bold" />
+          </button>
+        )}
       </div>
 
       <button

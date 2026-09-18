@@ -105,23 +105,32 @@ function IndexPopup() {
     }
   }
 
+  const MY_ATTENDANCE_URL = "https://kiet.cybervidya.net/attendance/my-attendance"
+
   const handleOpenPortal = () => {
     if (typeof chrome !== "undefined" && chrome.tabs) {
       chrome.tabs.query({ url: "*://*.cybervidya.net/*" }, (tabs) => {
-        if (tabs && tabs.length > 0 && tabs[0].id) {
-          chrome.tabs.update(tabs[0].id, { active: true })
+        const myAttendanceTab = tabs?.find((t) => t.url?.includes("my-attendance"))
+        if (myAttendanceTab?.id) {
+          chrome.tabs.update(myAttendanceTab.id, { active: true })
+          if (myAttendanceTab.windowId) {
+            chrome.windows.update(myAttendanceTab.windowId, { focused: true })
+          }
+          window.close()
+        } else if (tabs && tabs.length > 0 && tabs[0].id) {
+          chrome.tabs.update(tabs[0].id, { active: true, url: MY_ATTENDANCE_URL })
           if (tabs[0].windowId) {
             chrome.windows.update(tabs[0].windowId, { focused: true })
           }
           window.close()
         } else {
-          chrome.tabs.create({ url: "https://cybervidya.net" }, () => {
+          chrome.tabs.create({ url: MY_ATTENDANCE_URL }, () => {
             window.close()
           })
         }
       })
     } else {
-      window.open("https://cybervidya.net", "_blank")
+      window.open(MY_ATTENDANCE_URL, "_blank")
     }
   }
 
@@ -224,11 +233,12 @@ function IndexPopup() {
           flexDirection: "column",
           minHeight: 0
         }}>
-        {cleanSubjects.length > 0 && (
+        {(showEyeTip === true || cleanSubjects.length > 0) && (
           <EyeTip
             activeTabId={activeTabId}
             forceVisible={showEyeTip === true}
             onClose={() => setShowEyeTip(false)}
+            onOpenAttendance={handleOpenPortal}
             theme={currentTheme}
           />
         )}

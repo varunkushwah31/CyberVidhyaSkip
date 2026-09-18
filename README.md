@@ -1,3 +1,17 @@
+# CyberVidhya Attendance & Skip Planner
+
+Chrome extension for KIET students to track CyberVidhya attendance, compute safe skip allowances, and prevent debarment under the 75% attendance rule.
+
+## 📌 User Instructions: Getting Accurate Data
+
+To get **100% accurate data** (including complete lecture logs and Duty Leave / OD adjustments):
+
+1. Go to **[https://kiet.cybervidya.net/attendance/my-attendance](https://kiet.cybervidya.net/attendance/my-attendance)** in your browser.
+2. The extension will automatically read and cache the verified lecture breakdown and attendance logs for all your registered courses.
+3. Open the extension popup anytime to view your exact skip margin, required classes, and aggregated attendance percentage!
+
+---
+
 This is a [Plasmo extension](https://docs.plasmo.com/) project bootstrapped with [`plasmo init`](https://www.npmjs.com/package/plasmo).
 
 ## Getting Started

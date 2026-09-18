@@ -66,8 +66,26 @@ export function CourseList({
             <EyeIcon size={14} weight="bold" />
           </div>
           <span>
-            Click any course's <strong style={{ color: theme.textPrimary }}>eye icon</strong> or open{" "}
-            <strong style={{ color: theme.accent }}>My Attendance</strong> to sync exact lecture breakdown.
+            Go to{" "}
+            <a
+              href="https://kiet.cybervidya.net/attendance/my-attendance"
+              onClick={(e) => {
+                if (onOpenPortal) {
+                  e.preventDefault()
+                  onOpenPortal()
+                }
+              }}
+              target="_blank"
+              rel="noreferrer"
+              style={{
+                color: theme.accent,
+                fontWeight: 600,
+                textDecoration: "underline",
+                cursor: "pointer"
+              }}>
+              kiet.cybervidya.net/attendance/my-attendance
+            </a>{" "}
+            for getting one-time accurate data, or click any course's <strong style={{ color: theme.textPrimary }}>eye icon</strong>.
           </span>
         </div>
       </div>
@@ -129,7 +147,7 @@ export function CourseList({
           color: theme.textPrimary,
           letterSpacing: "-0.01em"
         }}>
-        {isCyberVidhya ? "Ready to Track Attendance" : "Open CyberVidhya Dashboard"}
+        {isCyberVidhya ? "Ready to Track Attendance" : "Track KIET CyberVidhya Attendance"}
       </div>
 
       <p
@@ -139,9 +157,27 @@ export function CourseList({
           margin: "8px 0 16px 0",
           lineHeight: 1.45
         }}>
-        {isCyberVidhya
-          ? "Log into your student portal or navigate to My Attendance. The extension will automatically compute exact skip margins."
-          : "Navigate to your CyberVidhya student dashboard or attendance view to unlock real-time attendance protection."}
+        Go to{" "}
+        <a
+          href="https://kiet.cybervidya.net/attendance/my-attendance"
+          onClick={(e) => {
+            if (onOpenPortal) {
+              e.preventDefault()
+              onOpenPortal()
+            }
+          }}
+          target="_blank"
+          rel="noreferrer"
+          style={{
+            color: theme.accent,
+            fontWeight: 600,
+            textDecoration: "underline",
+            cursor: "pointer",
+            wordBreak: "break-all"
+          }}>
+          https://kiet.cybervidya.net/attendance/my-attendance
+        </a>{" "}
+        for getting one-time accurate data. The extension will automatically sync your verified lecture records, duty leaves (OD), and compute exact skip margins.
       </p>
 
       {isCyberVidhya && scriptConnected === false && (
@@ -157,7 +193,8 @@ export function CourseList({
             fontWeight: 600,
             cursor: "pointer",
             boxShadow: "0 1px 2px rgba(0, 0, 0, 0.1)",
-            transition: "opacity 0.15s ease"
+            transition: "opacity 0.15s ease",
+            marginBottom: onOpenPortal ? 8 : 0
           }}
           onMouseEnter={(e) => {
             e.currentTarget.style.opacity = "0.9"
@@ -169,7 +206,7 @@ export function CourseList({
         </button>
       )}
 
-      {!isCyberVidhya && onOpenPortal && (
+      {onOpenPortal && (
         <button
           onClick={onOpenPortal}
           style={{
@@ -195,7 +232,7 @@ export function CourseList({
             e.currentTarget.style.opacity = "1"
           }}>
           <ArrowSquareOutIcon size={14} weight="bold" />
-          Open CyberVidhya Portal
+          Go to My Attendance
         </button>
       )}
     </div>
