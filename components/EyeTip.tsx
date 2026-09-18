@@ -8,10 +8,18 @@ interface EyeTipProps {
   readonly forceVisible?: boolean
   readonly onClose?: () => void
   readonly onOpenAttendance?: () => void
+  readonly portalUrl?: string
   readonly theme?: AppTheme
 }
 
-export function EyeTip({ activeTabId, forceVisible = false, onClose, onOpenAttendance, theme }: Readonly<EyeTipProps>) {
+export function EyeTip({
+  activeTabId,
+  forceVisible = false,
+  onClose,
+  onOpenAttendance,
+  portalUrl = "https://kiet.cybervidya.net/attendance/my-attendance",
+  theme
+}: Readonly<EyeTipProps>) {
   const [ready, setReady] = useState(false)
   const [dismissed, setDismissed] = useState(true)
 
@@ -96,7 +104,7 @@ export function EyeTip({ activeTabId, forceVisible = false, onClose, onOpenAtten
           }}>
           Go to{" "}
           <a
-            href="https://kiet.cybervidya.net/attendance/my-attendance"
+            href={portalUrl}
             onClick={(e) => {
               if (onOpenAttendance) {
                 e.preventDefault()
@@ -109,9 +117,10 @@ export function EyeTip({ activeTabId, forceVisible = false, onClose, onOpenAtten
               color: accentColor,
               fontWeight: 600,
               textDecoration: "underline",
-              cursor: "pointer"
+              cursor: "pointer",
+              wordBreak: "break-all"
             }}>
-            https://kiet.cybervidya.net/attendance/my-attendance
+            {(portalUrl || "https://kiet.cybervidya.net/attendance/my-attendance").replace(/^https?:\/\//, "")}
           </a>{" "}
           for getting one-time accurate data (verified lecture breakdown & OD logs).
         </p>

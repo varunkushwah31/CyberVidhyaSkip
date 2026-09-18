@@ -143,3 +143,50 @@ export function calculateAggregatePercentage(subjects: SubjectAttendance[]): num
 
   return totalCredits > 0 ? Number((weightedSum / totalCredits).toFixed(1)) : 0
 }
+
+/**
+ * Calculates semester-long skip allowance based on expected total lectures (default: 45).
+ * Under the 75% rule, max allowable skips across the whole term is floor(expectedTotal * 0.25).
+ */
+export function computeSemesterBudget(
+  attended: number,
+  missed: number,
+  totalConducted: number,
+  expectedTotal = 45
+) {
+  const safeTotal = Math.max(totalConducted, expectedTotal)
+  const maxAllowedSkips = Math.floor(safeTotal * 0.25)
+  const skipsUsed = Math.max(0, missed)
+  const skipsRemaining = Math.max(0, maxAllowedSkips - skipsUsed)
+  const isExceeded = skipsUsed > maxAllowedSkips
+
+  return {
+    expectedTotal: safeTotal,
+    maxAllowedSkips,
+    skipsUsed,
+    skipsRemaining,
+    isExceeded
+  }
+}
+
+/**
+ * Computes simulated metrics for "What-If" scenarios.
+ * Supports adding attended/missed classes and converting missed classes via Pending OD.
+ * Pending OD adds to attended without increasing total (since the class was already held and missed).
+ */
+export function computeSimulatedMetrics(
+  attended: number,
+  total: number,
+  extraAttended = 0,
+  extraMissed = 0,
+  pendingOD = 0
+): AttendanceMetrics {
+  const simTotal = Math.max(0, total + extraAttended + extraMissed)
+  let simAttended = Math.max(0, attended + extraAttended + pendingOD)
+  if (simTotal > 0 && simAttended > simTotal) {
+    simAttended = simTotal
+  }
+
+  return compute75Metrics(simAttended, simTotal)
+}
+

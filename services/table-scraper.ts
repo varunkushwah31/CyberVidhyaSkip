@@ -358,6 +358,17 @@ export function scrapeGeneralDashboardTable(): SubjectAttendance[] {
       const percentDisplay = rawPercent.includes("%") ? rawPercent : `${percentage}%`
       injectTableBadge(percentCell, percentDisplay, metrics.message, metrics.badgeStyles, tooltip)
 
+      // Danger Row Highlighting: subtle soft red warning tint for debarred/deficit courses
+      if (metrics.status === "deficit" || percentage < 75) {
+        row.classList.add("cv-danger-row")
+        row.style.backgroundColor = "rgba(244, 63, 94, 0.06)"
+        row.style.transition = "background-color 0.2s ease"
+      } else if (row.classList.contains("cv-danger-row")) {
+        row.classList.remove("cv-danger-row")
+        row.style.backgroundColor = ""
+      }
+
+
       extracted.push({
         id: `${courseCode || courseName}-${component}`,
         courseCode,

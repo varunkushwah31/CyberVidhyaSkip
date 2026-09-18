@@ -49,6 +49,32 @@ export interface AttendanceStore {
 export type FilterType = "all" | "risk" | "safe"
 export type ThemeMode = "dark" | "light"
 
+export interface CourseSimulation {
+  extraAttended: number
+  extraMissed: number
+  pendingOD: number
+}
+
+export interface SemesterBudget {
+  expectedTotal: number
+  maxAllowedSkips: number
+  skipsUsed: number
+  skipsRemaining: number
+  isExceeded: boolean
+}
+
+export interface SimulatedSubjectAttendance extends SubjectAttendance {
+  simulation?: CourseSimulation
+  originalPercentage?: number
+  originalStatus?: AttendanceStatus
+  originalMessage?: string
+  simulatedPercentage?: number
+  simulatedStatus?: AttendanceStatus
+  simulatedMessage?: string
+  percentageDelta?: number
+  budget?: SemesterBudget
+}
+
 export interface CachedCourse {
   courseCode: string
   courseName: string
@@ -58,4 +84,5 @@ export interface CachedCourse {
   percentage: number
   adjustedClasses?: number
 }
+
 

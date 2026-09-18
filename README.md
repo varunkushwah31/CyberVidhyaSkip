@@ -1,14 +1,22 @@
 # CyberVidhya Attendance & Skip Planner
 
-Chrome extension for KIET students to track CyberVidhya attendance, compute safe skip allowances, and prevent debarment under the 75% attendance rule.
+Chrome extension for students of KIET, ABES, AKGEC, and all institutions using CyberVidhya ERP to track attendance, compute safe skip allowances, simulate leave impact, and prevent debarment under the 75% attendance rule.
+
+## 🚀 Key Features
+
+- **Interactive "What-If" Leave Simulator**: Test `+1 Attended` / `+1 Missed` scenarios per subject or test full-day leaves ("Can I skip tomorrow?") without touching real data.
+- **Duty Leave (OD) Recovery Tracker**: Log pending On-Duty / Medical certificates to project your attendance and debarment clearance.
+- **Full-Semester Skip Budget**: Calculate remaining skips allowed across the entire ~45-lecture semester under the 75% threshold.
+- **Multi-Institute Support**: Works automatically on any `*.cybervidya.net` portal with dynamic subdomain detection.
+- **In-Portal Enhancements**: Danger row highlighting (<75% warning tint) and a non-intrusive floating quick pill widget directly inside CyberVidhya.
 
 ## 📌 User Instructions: Getting Accurate Data
 
 To get **100% accurate data** (including complete lecture logs and Duty Leave / OD adjustments):
 
-1. Go to **[https://kiet.cybervidya.net/attendance/my-attendance](https://kiet.cybervidya.net/attendance/my-attendance)** in your browser.
+1. Go to your portal's attendance page (e.g. **`https://[your-college].cybervidya.net/attendance/my-attendance`**) in your browser.
 2. The extension will automatically read and cache the verified lecture breakdown and attendance logs for all your registered courses.
-3. Open the extension popup anytime to view your exact skip margin, required classes, and aggregated attendance percentage!
+3. Open the extension popup anytime to view your exact skip margin, simulate leaves, and track your aggregate attendance!
 
 ---
 

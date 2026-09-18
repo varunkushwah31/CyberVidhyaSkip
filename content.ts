@@ -5,6 +5,7 @@ import type { PlasmoCSConfig } from "plasmo";
 import { BADGE_CLASS_NAME } from "~constants/theme";
 import { fetchCyberVidhyaAttendance } from "~services/api-service";
 import { hideEyeTip } from "~services/eye-tip";
+import { renderFloatingWidget } from "~services/floating-widget";
 import { scrapeModalHeader } from "~services/modal-scraper"
 import { scrapeGeneralDashboardTable } from "~services/table-scraper";
 import type { AttendanceStore } from "~types";
@@ -71,6 +72,15 @@ export function processAttendance(triggerApi = false): number {
     }
 
     saveStoredAttendance(payload)
+
+    // Render floating quick pill widget on CyberVidhya pages
+    if (window.location.hostname.includes("cybervidya.net")) {
+      const bufferSkips =
+        totalClasses > 0 && overallPercentage >= 75
+          ? Math.max(0, Math.floor((4 * totalAttended - 3 * totalClasses) / 3))
+          : 0
+      renderFloatingWidget(overallPercentage, detentionCount, totalClasses, bufferSkips)
+    }
   }
 
   // 3. Asynchronously fetch latest API counts in background without blocking UI

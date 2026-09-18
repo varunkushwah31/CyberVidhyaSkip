@@ -10,7 +10,11 @@ interface CourseListProps {
   readonly scriptConnected: boolean | null
   readonly onReloadTab: () => void
   readonly onOpenPortal?: () => void
+  readonly portalUrl?: string
   readonly theme: AppTheme
+  readonly simulations?: Record<string, import("~types").CourseSimulation>
+  readonly onSimulateChange?: (subjectId: string, sim: import("~types").CourseSimulation) => void
+  readonly onResetSimulation?: (subjectId: string) => void
 }
 
 export function CourseList({
@@ -20,8 +24,14 @@ export function CourseList({
   scriptConnected,
   onReloadTab,
   onOpenPortal,
-  theme
+  portalUrl = "https://kiet.cybervidya.net/attendance/my-attendance",
+  theme,
+  simulations,
+  onSimulateChange,
+  onResetSimulation
 }: Readonly<CourseListProps>) {
+  const displayPortalUrl = (portalUrl || "https://kiet.cybervidya.net/attendance/my-attendance").replace(/^https?:\/\//, "")
+
   if (subjects.length > 0) {
     return (
       <div
@@ -29,7 +39,14 @@ export function CourseList({
           padding: "0 14px 14px 14px"
         }}>
         {subjects.map((subject) => (
-          <CourseCard key={subject.id} subject={subject} theme={theme} />
+          <CourseCard
+            key={subject.id}
+            subject={subject}
+            theme={theme}
+            simulation={simulations?.[subject.id]}
+            onSimulateChange={onSimulateChange}
+            onResetSimulation={onResetSimulation}
+          />
         ))}
 
         {/* Sleek Guidance Callout */}
@@ -68,7 +85,7 @@ export function CourseList({
           <span>
             Go to{" "}
             <a
-              href="https://kiet.cybervidya.net/attendance/my-attendance"
+              href={portalUrl}
               onClick={(e) => {
                 if (onOpenPortal) {
                   e.preventDefault()
@@ -83,7 +100,7 @@ export function CourseList({
                 textDecoration: "underline",
                 cursor: "pointer"
               }}>
-              kiet.cybervidya.net/attendance/my-attendance
+              {displayPortalUrl}
             </a>{" "}
             for getting one-time accurate data, or click any course's <strong style={{ color: theme.textPrimary }}>eye icon</strong>.
           </span>
@@ -159,7 +176,7 @@ export function CourseList({
         }}>
         Go to{" "}
         <a
-          href="https://kiet.cybervidya.net/attendance/my-attendance"
+          href={portalUrl}
           onClick={(e) => {
             if (onOpenPortal) {
               e.preventDefault()
@@ -175,7 +192,7 @@ export function CourseList({
             cursor: "pointer",
             wordBreak: "break-all"
           }}>
-          https://kiet.cybervidya.net/attendance/my-attendance
+          {displayPortalUrl}
         </a>{" "}
         for getting one-time accurate data. The extension will automatically sync your verified lecture records, duty leaves (OD), and compute exact skip margins.
       </p>

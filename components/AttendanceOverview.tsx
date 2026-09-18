@@ -1,31 +1,58 @@
-import { ShieldCheckIcon, WarningCircleIcon } from "@phosphor-icons/react"
-import type { AppTheme } from "~constants/theme"
-import type { SubjectAttendance } from "~types"
+import { ArrowCounterClockwiseIcon, CalendarCheckIcon, ShieldCheckIcon, WarningCircleIcon } from "@phosphor-icons/react";
+
+
+
+import type { AppTheme } from "~constants/theme";
+import type { SubjectAttendance } from "~types";
+
+
+
+
 
 interface AttendanceOverviewProps {
   readonly aggregatePercentage: number
   readonly activeSubjects: readonly SubjectAttendance[]
   readonly detentionCount: number
   readonly theme: AppTheme
+  readonly isSimulated?: boolean
+  readonly originalAggregate?: number
+  readonly onResetAllSimulations?: () => void
+  readonly onSimulateTomorrowLeave?: () => void
+  readonly onRevertTomorrowLeave?: () => void
+  readonly isTomorrowLeaveSimulated?: boolean
 }
 
 export function AttendanceOverview({
   aggregatePercentage,
   activeSubjects,
   detentionCount,
-  theme
+  theme,
+  isSimulated = false,
+  originalAggregate,
+  onResetAllSimulations,
+  onSimulateTomorrowLeave,
+  onRevertTomorrowLeave,
+  isTomorrowLeaveSimulated = false
 }: Readonly<AttendanceOverviewProps>) {
-  const isAggregateSafe = aggregatePercentage >= 75
-  const totalAttended = activeSubjects.reduce((acc, s) => acc + s.attended, 0)
-  const totalMissed = activeSubjects.reduce((acc, s) => acc + s.missed, 0)
-  const totalClasses = activeSubjects.reduce((acc, s) => acc + s.total, 0)
+  const safeAggregate =
+    typeof aggregatePercentage === "number" &&
+    !Number.isNaN(aggregatePercentage)
+      ? aggregatePercentage
+      : 0
+  const safeActiveSubjects = activeSubjects || []
+  const safeDetentionCount = detentionCount || 0
+
+  const isAggregateSafe = safeAggregate >= 75
+  const totalAttended = safeActiveSubjects.reduce((acc, s) => acc + (s.attended || 0), 0)
+  const totalMissed = safeActiveSubjects.reduce((acc, s) => acc + (s.missed || 0), 0)
+  const totalClasses = safeActiveSubjects.reduce((acc, s) => acc + (s.total || 0), 0)
 
   // Deficit courses analysis
-  const deficitSubjects = activeSubjects.filter((s) => s.status === "deficit" || s.percentage < 75)
-  const hasDeficit = detentionCount > 0 || deficitSubjects.length > 0
-  const deficitCount = Math.max(detentionCount, deficitSubjects.length)
+  const deficitSubjects = safeActiveSubjects.filter((s) => s.status === "deficit" || (s.percentage || 0) < 75)
+  const hasDeficit = safeDetentionCount > 0 || deficitSubjects.length > 0
+  const deficitCount = Math.max(safeDetentionCount, deficitSubjects.length)
   const classesNeededToRecover = deficitSubjects.reduce((acc, s) => {
-    return acc + Math.max(1, Math.ceil(3 * s.total - 4 * s.attended))
+    return acc + Math.max(1, Math.ceil(3 * (s.total || 0) - 4 * (s.attended || 0)))
   }, 0)
 
   // Strict 75% aggregate buffer calculation
@@ -46,7 +73,16 @@ export function AttendanceOverview({
       ? theme.statusColors.surplus
       : theme.statusColors.deficit
 
-  const progressRatio = Math.min(1, Math.max(0, aggregatePercentage / 100))
+  const progressRatio = Math.min(1, Math.max(0, safeAggregate / 100))
+  const safeOriginal =
+    typeof originalAggregate === "number" && !Number.isNaN(originalAggregate)
+      ? originalAggregate
+      : undefined
+  const aggregateDelta =
+    isSimulated && safeOriginal !== undefined
+      ? Number((safeAggregate - safeOriginal).toFixed(1))
+      : 0
+
 
   return (
     <div
@@ -56,10 +92,62 @@ export function AttendanceOverview({
         margin: "8px 14px 8px 14px",
         borderRadius: 12,
         padding: "13px 15px",
-        border: `1px solid ${theme.cardBorder}`,
+        border: isSimulated
+          ? `1px dashed ${theme.accent}`
+          : `1px solid ${theme.cardBorder}`,
         boxShadow: theme.cardShadow,
-        boxSizing: "border-box"
+        boxSizing: "border-box",
+        transition: "all 0.2s ease"
       }}>
+      {/* Simulation Banner when active */}
+      {isSimulated && (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "5px 9px",
+            marginBottom: 10,
+            borderRadius: 8,
+            backgroundColor:
+              theme.name === "dark"
+                ? "rgba(99, 102, 241, 0.16)"
+                : "rgba(79, 70, 229, 0.08)",
+            border: `1px solid ${theme.accent}33`,
+            fontSize: 10.5,
+            color: theme.accent
+          }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 5, fontWeight: 600 }}>
+            <span>⚡ What-If Simulation Active</span>
+            {safeOriginal !== undefined && (
+              <span style={{ color: theme.textSecondary, fontWeight: 500 }}>
+                ({safeOriginal.toFixed(1)}% &rarr; {safeAggregate.toFixed(1)}%)
+              </span>
+            )}
+          </div>
+          {onResetAllSimulations && (
+            <button
+              type="button"
+              onClick={onResetAllSimulations}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 3,
+                background: "none",
+                border: "none",
+                color: theme.statusColors.deficit.solid,
+                fontSize: 10.5,
+                fontWeight: 600,
+                cursor: "pointer",
+                padding: "2px 4px"
+              }}>
+              <ArrowCounterClockwiseIcon size={12} weight="bold" />
+              <span>Reset All</span>
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Top Row: Direct Action Verdict + Percentage Pill */}
       <div
         style={{
@@ -128,10 +216,10 @@ export function AttendanceOverview({
               lineHeight: 1.4
             }}>
             {hasDeficit
-              ? `Attend next ${classesNeededToRecover} ${classesNeededToRecover === 1 ? "class" : "classes"} to recover · ${aggregatePercentage.toFixed(1)}% aggregate`
+              ? `Attend next ${classesNeededToRecover} ${classesNeededToRecover === 1 ? "class" : "classes"} to recover · ${safeAggregate.toFixed(1)}% aggregate`
               : isAggregateSafe
-                ? `All courses meet 75% rule · ${aggregatePercentage.toFixed(1)}% aggregate`
-                : `${aggregatePercentage.toFixed(1)}% aggregate · Below 75% requirement`}
+                ? `All courses meet 75% rule · ${safeAggregate.toFixed(1)}% aggregate`
+                : `${safeAggregate.toFixed(1)}% aggregate · Below 75% requirement`}
           </div>
         </div>
 
@@ -153,7 +241,12 @@ export function AttendanceOverview({
             flexShrink: 0
           }}>
           {hasDeficit && <WarningCircleIcon size={12} weight="fill" />}
-          {aggregatePercentage.toFixed(1)}%
+          {safeAggregate.toFixed(1)}%
+          {isSimulated && aggregateDelta !== 0 && (
+            <span style={{ fontSize: 9.5, opacity: 0.85 }}>
+              ({aggregateDelta > 0 ? `+${aggregateDelta}` : aggregateDelta}%)
+            </span>
+          )}
         </span>
       </div>
 
@@ -181,7 +274,7 @@ export function AttendanceOverview({
         />
       </div>
 
-      {/* Balanced meta stats line */}
+      {/* Balanced meta stats line + Leave Simulator Action */}
       <div
         style={{
           display: "flex",
@@ -195,18 +288,52 @@ export function AttendanceOverview({
           <strong style={{ color: theme.textSecondary, fontWeight: 600 }}>{totalAttended}</strong> attended of{" "}
           <strong style={{ color: theme.textSecondary, fontWeight: 600 }}>{totalClasses}</strong> total
         </span>
-        <span>
-          {totalMissed > 0 ? (
-            <span>
-              <strong style={{ color: hasDeficit ? theme.statusColors.deficit.solid : theme.textSecondary, fontWeight: 600 }}>
-                {totalMissed}
-              </strong>{" "}
-              missed
-            </span>
-          ) : (
-            <span>0 missed</span>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          {onSimulateTomorrowLeave && (
+            <button
+              type="button"
+              onClick={isTomorrowLeaveSimulated ? onRevertTomorrowLeave : onSimulateTomorrowLeave}
+              title="Test the impact of missing 1 class in every active subject tomorrow"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 4,
+                background: "none",
+                border: `1px solid ${
+                  isTomorrowLeaveSimulated ? theme.accent : theme.inputBorder
+                }`,
+                borderRadius: 6,
+                padding: "2px 6px",
+                fontSize: 10,
+                fontWeight: 600,
+                color: isTomorrowLeaveSimulated ? theme.accent : theme.textSecondary,
+                cursor: "pointer",
+                backgroundColor: isTomorrowLeaveSimulated
+                  ? theme.name === "dark"
+                    ? "rgba(99, 102, 241, 0.15)"
+                    : "rgba(79, 70, 229, 0.08)"
+                  : "transparent",
+                transition: "all 0.15s ease"
+              }}>
+              <CalendarCheckIcon size={12} weight="bold" />
+              <span>{isTomorrowLeaveSimulated ? "Revert Tomorrow" : "Skip Tomorrow?"}</span>
+            </button>
           )}
-        </span>
+
+          <span>
+            {totalMissed > 0 ? (
+              <span>
+                <strong style={{ color: hasDeficit ? theme.statusColors.deficit.solid : theme.textSecondary, fontWeight: 600 }}>
+                  {totalMissed}
+                </strong>{" "}
+                missed
+              </span>
+            ) : (
+              <span>0 missed</span>
+            )}
+          </span>
+        </div>
       </div>
     </div>
   )
