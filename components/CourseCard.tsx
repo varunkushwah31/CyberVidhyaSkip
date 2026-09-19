@@ -149,20 +149,25 @@ export function CourseCard({
     <div
       style={{
         backgroundColor: theme.cardBg,
-        borderRadius: 12,
-        padding: "12px 14px",
+        borderRadius: "3px 12px 12px 3px",
+        padding: "12px 14px 12px 13px",
         marginBottom: 8,
         boxShadow: theme.cardShadow,
         border: isSimulated
           ? `1px dashed ${theme.accent}`
           : `1px solid ${theme.cardBorder}`,
-        transition: "border-color 0.15s ease",
+        borderLeft: isSimulated
+          ? `1px dashed ${theme.accent}`
+          : `3px solid ${currentStatusColors.solid}`,
+        transition: "transform 0.15s ease, border-color 0.15s ease",
         boxSizing: "border-box"
       }}
       onMouseEnter={(e) => {
+        e.currentTarget.style.transform = "scale(1.005)"
         if (!isSimulated) e.currentTarget.style.borderColor = theme.cardHoverBorder
       }}
       onMouseLeave={(e) => {
+        e.currentTarget.style.transform = "scale(1)"
         if (!isSimulated) e.currentTarget.style.borderColor = theme.cardBorder
       }}>
       {/* Top Row: Course Identity + Status Pill */}
@@ -223,8 +228,9 @@ export function CourseCard({
                 style={{
                   fontFamily:
                     'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
-                  fontWeight: 600,
-                  color: theme.textPrimary
+                  fontSize: 9.5,
+                  fontWeight: 500,
+                  color: theme.textMuted
                 }}>
                 {subject.courseCode}
               </span>
@@ -259,7 +265,7 @@ export function CourseCard({
         <div
           style={{
             position: "relative",
-            height: 4,
+            height: 5,
             backgroundColor: theme.progressBarBg,
             borderRadius: 9999,
             overflow: "hidden"
@@ -272,7 +278,8 @@ export function CourseCard({
               borderRadius: 9999,
               transformOrigin: "left",
               transform: `scaleX(${progressRatio})`,
-              transition: "transform 0.25s ease-out"
+              transition: "transform 0.25s ease-out",
+              boxShadow: theme.progressBarGlow
             }}
           />
         </div>
@@ -337,7 +344,7 @@ export function CourseCard({
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <span
             style={{
-              fontSize: 12,
+              fontSize: 13,
               fontWeight: 700,
               color: currentStatusColors.solid,
               letterSpacing: "-0.01em"

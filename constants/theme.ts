@@ -72,9 +72,18 @@ export interface AppTheme {
   accentGradient: string
   headerBg: string
   headerBorder: string
+  headerAccentBorder: string
   stickyBg: string
   divider: string
   progressBarBg: string
+  progressBarGlow: string
+  overviewAccentBg: string
+  overviewAccentBorder: string
+  accentGlow: string
+  scrollbarIdle: string
+  scrollbarHover: string
+  selectionBg: string
+  selectionText: string
   statusColors: {
     surplus: {
       bg: string
@@ -135,9 +144,18 @@ export const THEMES: Record<ThemeMode, AppTheme> = {
     accentGradient: "#4f46e5",
     headerBg: "rgba(12, 16, 23, 0.96)",
     headerBorder: "rgba(255, 255, 255, 0.07)",
+    headerAccentBorder: "rgba(99, 102, 241, 0.35)",
     stickyBg: "rgba(12, 16, 23, 0.94)",
     divider: "rgba(255, 255, 255, 0.07)",
     progressBarBg: "rgba(255, 255, 255, 0.07)",
+    progressBarGlow: "inset 0 1px 0 rgba(255, 255, 255, 0.18)",
+    overviewAccentBg: "rgba(99, 102, 241, 0.06)",
+    overviewAccentBorder: "rgba(99, 102, 241, 0.18)",
+    accentGlow: "0 0 16px rgba(99, 102, 241, 0.25)",
+    scrollbarIdle: "rgba(255, 255, 255, 0.08)",
+    scrollbarHover: "rgba(255, 255, 255, 0.22)",
+    selectionBg: "rgba(99, 102, 241, 0.35)",
+    selectionText: "#f1f5f9",
     statusColors: {
       surplus: {
         bg: "rgba(16, 185, 129, 0.1)",
@@ -196,9 +214,18 @@ export const THEMES: Record<ThemeMode, AppTheme> = {
     accentGradient: "#4f46e5",
     headerBg: "rgba(255, 255, 255, 0.96)",
     headerBorder: "#e2e8f0",
+    headerAccentBorder: "rgba(79, 70, 229, 0.25)",
     stickyBg: "rgba(248, 250, 252, 0.94)",
     divider: "#e2e8f0",
     progressBarBg: "#e2e8f0",
+    progressBarGlow: "inset 0 1px 0 rgba(255, 255, 255, 0.45)",
+    overviewAccentBg: "#f5f3ff",
+    overviewAccentBorder: "#ddd6fe",
+    accentGlow: "0 0 16px rgba(79, 70, 229, 0.18)",
+    scrollbarIdle: "rgba(0, 0, 0, 0.06)",
+    scrollbarHover: "rgba(0, 0, 0, 0.2)",
+    selectionBg: "rgba(79, 70, 229, 0.2)",
+    selectionText: "#0f172a",
     statusColors: {
       surplus: {
         bg: "#ecfdf5",

@@ -19,6 +19,8 @@ export function StatusPill({ status, message, theme }: Readonly<StatusPillProps>
     Icon = InfoIcon
   }
 
+  const iconWeight = status === "deficit" ? "fill" : status === "boundary" ? "bold" : "regular"
+
   // Use theme colors if provided, else fallback to sleek modern colors
   const statusColor = theme?.statusColors?.[status]
   const bg = statusColor ? statusColor.bg : status === "deficit" ? "rgba(244, 63, 94, 0.12)" : status === "boundary" ? "rgba(245, 158, 11, 0.12)" : status === "no_classes" ? "rgba(148, 163, 184, 0.12)" : "rgba(16, 185, 129, 0.12)"
@@ -35,14 +37,15 @@ export function StatusPill({ status, message, theme }: Readonly<StatusPillProps>
         borderRadius: 9999,
         fontSize: 10,
         fontWeight: 600,
-        letterSpacing: "0.01em",
+        letterSpacing: "0.02em",
         backgroundColor: bg,
         color,
         border: `1px solid ${border}`,
+        boxShadow: status === "deficit" ? `0 0 0 1px ${border}` : "none",
         lineHeight: 1.2,
         whiteSpace: "nowrap"
       }}>
-      <Icon size={11} weight="bold" />
+      <Icon size={11} weight={iconWeight} />
       <span style={{ fontVariantNumeric: "tabular-nums" }}>{message}</span>
     </span>
   )

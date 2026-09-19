@@ -52,24 +52,24 @@ export function CourseList({
         {/* Sleek Guidance Callout */}
         <div
           style={{
-            marginTop: 6,
-            marginBottom: 6,
-            padding: "9px 12px",
-            borderRadius: 10,
+            marginTop: 4,
+            marginBottom: 4,
+            padding: "7px 10px",
+            borderRadius: 9,
             backgroundColor: theme.metricBg,
             border: `1px solid ${theme.metricBorder}`,
             display: "flex",
             alignItems: "center",
-            gap: 9,
-            fontSize: 11,
+            gap: 7,
+            fontSize: 10.5,
             color: theme.textSecondary,
             lineHeight: 1.4
           }}>
           <div
             style={{
-              width: 22,
-              height: 22,
-              borderRadius: 6,
+              width: 18,
+              height: 18,
+              borderRadius: 5,
               backgroundColor:
                 theme.name === "dark"
                   ? "rgba(99, 102, 241, 0.18)"
@@ -80,7 +80,7 @@ export function CourseList({
               color: theme.accent,
               flexShrink: 0
             }}>
-            <EyeIcon size={14} weight="bold" />
+            <EyeIcon size={11} weight="bold" />
           </div>
           <span>
             Go to{" "}
@@ -143,7 +143,7 @@ export function CourseList({
   return (
     <div
       style={{
-        padding: "24px 18px",
+        padding: "28px 18px 22px 18px",
         textAlign: "center",
         backgroundColor: theme.cardBg,
         margin: "10px 14px 14px 14px",
@@ -151,73 +151,74 @@ export function CourseList({
         border: `1px solid ${theme.cardBorder}`,
         boxShadow: theme.cardShadow
       }}>
-      <BookOpenIcon
-        size={36}
-        weight="duotone"
-        style={{ color: theme.accent, margin: "0 auto 10px auto", display: "block" }}
-      />
+      {/* Gradient accent icon circle */}
+      <div
+        style={{
+          width: 48,
+          height: 48,
+          borderRadius: 9999,
+          background: `linear-gradient(135deg, ${theme.accent}, ${theme.accentGradient})`,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          margin: "0 auto 12px auto",
+          boxShadow: theme.accentGlow
+        }}>
+        <BookOpenIcon
+          size={22}
+          weight="fill"
+          style={{ color: "#ffffff" }}
+        />
+      </div>
 
       <div
         style={{
-          fontSize: 14,
+          fontSize: 13.5,
           fontWeight: 700,
           color: theme.textPrimary,
           letterSpacing: "-0.01em"
         }}>
-        {isCyberVidhya ? "Ready to Track Attendance" : "Track KIET CyberVidhya Attendance"}
+        {isCyberVidhya ? "Ready to Track Attendance" : "CyberVidhya Attendance Tracker"}
       </div>
 
       <p
         style={{
-          fontSize: 11.5,
+          fontSize: 11,
           color: theme.textSecondary,
-          margin: "8px 0 16px 0",
+          margin: "6px 0 16px 0",
           lineHeight: 1.45
         }}>
-        Go to{" "}
-        <a
-          href={portalUrl}
-          onClick={(e) => {
-            if (onOpenPortal) {
-              e.preventDefault()
-              onOpenPortal()
-            }
-          }}
-          target="_blank"
-          rel="noreferrer"
-          style={{
-            color: theme.accent,
-            fontWeight: 600,
-            textDecoration: "underline",
-            cursor: "pointer",
-            wordBreak: "break-all"
-          }}>
-          {displayPortalUrl}
-        </a>{" "}
-        for getting one-time accurate data. The extension will automatically sync your verified lecture records, duty leaves (OD), and compute exact skip margins.
+        Open your attendance portal to sync verified lecture records, duty leaves, and exact skip margins.
       </p>
 
       {isCyberVidhya && scriptConnected === false && (
         <button
           onClick={onReloadTab}
           style={{
-            padding: "8px 18px",
+            width: "100%",
+            padding: "9px 18px",
             backgroundColor: theme.accent,
             color: "#ffffff",
             border: "none",
-            borderRadius: 8,
-            fontSize: 11.5,
+            borderRadius: 9999,
+            fontSize: 12,
             fontWeight: 600,
             cursor: "pointer",
             boxShadow: "0 1px 2px rgba(0, 0, 0, 0.1)",
-            transition: "opacity 0.15s ease",
+            transition: "opacity 0.15s ease, transform 0.1s ease",
             marginBottom: onOpenPortal ? 8 : 0
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.opacity = "0.9"
+            e.currentTarget.style.opacity = "0.92"
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.opacity = "1"
+          }}
+          onMouseDown={(e) => {
+            e.currentTarget.style.transform = "scale(0.97)"
+          }}
+          onMouseUp={(e) => {
+            e.currentTarget.style.transform = "scale(1)"
           }}>
           Reload Portal Tab
         </button>
@@ -227,26 +228,33 @@ export function CourseList({
         <button
           onClick={onOpenPortal}
           style={{
+            width: "100%",
             display: "inline-flex",
             alignItems: "center",
             justifyContent: "center",
             gap: 6,
-            padding: "8px 18px",
+            padding: "9px 18px",
             backgroundColor: theme.accent,
             color: "#ffffff",
             border: "none",
-            borderRadius: 8,
+            borderRadius: 9999,
             fontSize: 12,
             fontWeight: 600,
             cursor: "pointer",
             boxShadow: "0 1px 2px rgba(0, 0, 0, 0.15)",
-            transition: "opacity 0.15s ease"
+            transition: "opacity 0.15s ease, transform 0.1s ease"
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.opacity = "0.9"
+            e.currentTarget.style.opacity = "0.92"
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.opacity = "1"
+          }}
+          onMouseDown={(e) => {
+            e.currentTarget.style.transform = "scale(0.97)"
+          }}
+          onMouseUp={(e) => {
+            e.currentTarget.style.transform = "scale(1)"
           }}>
           <ArrowSquareOutIcon size={14} weight="bold" />
           Go to My Attendance

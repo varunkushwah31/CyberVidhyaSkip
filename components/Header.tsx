@@ -36,18 +36,22 @@ export function Header({
     <div
       style={{
         backgroundColor: theme.headerBg,
-        borderBottom: `1px solid ${theme.headerBorder}`,
-        padding: "11px 16px",
+        borderBottom: "none",
+        backgroundImage: `linear-gradient(to right, ${theme.headerAccentBorder}, ${theme.headerBorder})`,
+        backgroundSize: "100% 1px",
+        backgroundRepeat: "no-repeat",
+        backgroundPosition: "bottom",
+        padding: "9px 14px",
         transition: "all 0.2s ease"
       }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         {/* Brand Lockup */}
-        <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <div
             style={{
-              width: 30,
-              height: 30,
-              borderRadius: 8,
+              width: 26,
+              height: 26,
+              borderRadius: 7,
               backgroundColor: theme.accent,
               display: "flex",
               alignItems: "center",
@@ -56,14 +60,14 @@ export function Header({
               boxShadow: "0 1px 2px rgba(0, 0, 0, 0.12)",
               flexShrink: 0
             }}>
-            <GraduationCapIcon size={17} weight="fill" />
+            <GraduationCapIcon size={15} weight="fill" />
           </div>
           <div>
             <div
               style={{
-                fontSize: 13,
+                fontSize: 12.5,
                 fontWeight: 700,
-                letterSpacing: "-0.015em",
+                letterSpacing: "-0.02em",
                 color: theme.textPrimary,
                 lineHeight: 1.2
               }}>
@@ -71,9 +75,9 @@ export function Header({
             </div>
             <div
               style={{
-                fontSize: 10,
+                fontSize: 9.5,
                 color: theme.textMuted,
-                fontWeight: 500,
+                fontWeight: 400,
                 marginTop: 1,
                 letterSpacing: "0.01em"
               }}>
@@ -83,7 +87,7 @@ export function Header({
         </div>
 
         {/* Action Controls */}
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
           {/* Theme Toggle Button */}
           <button
             onClick={onToggleTheme}
@@ -92,9 +96,9 @@ export function Header({
               background: theme.metricBg,
               border: `1px solid ${theme.metricBorder}`,
               color: theme.textSecondary,
-              width: 28,
-              height: 28,
-              borderRadius: 7,
+              width: 26,
+              height: 26,
+              borderRadius: 6,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -128,9 +132,9 @@ export function Header({
                   ? `1px solid ${theme.accent}`
                   : `1px solid ${theme.metricBorder}`,
                 color: tipActive ? theme.accent : theme.textSecondary,
-                width: 28,
-                height: 28,
-                borderRadius: 7,
+                width: 26,
+                height: 26,
+                borderRadius: 6,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -163,9 +167,9 @@ export function Header({
               background: theme.metricBg,
               border: `1px solid ${theme.metricBorder}`,
               color: theme.textSecondary,
-              width: 28,
-              height: 28,
-              borderRadius: 7,
+              width: 26,
+              height: 26,
+              borderRadius: 6,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",

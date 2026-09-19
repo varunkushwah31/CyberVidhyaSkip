@@ -63,7 +63,7 @@ export function EyeTip({
         alignItems: "flex-start",
         gap: 10,
         margin: "8px 14px 2px 14px",
-        padding: "10px 12px",
+        padding: "8px 10px",
         borderRadius: 10,
         backgroundColor: cardBg,
         border: `1px solid ${cardBorder}`,
@@ -72,9 +72,9 @@ export function EyeTip({
       <div
         style={{
           flexShrink: 0,
-          width: 24,
-          height: 24,
-          borderRadius: 6,
+          width: 20,
+          height: 20,
+          borderRadius: 5,
           backgroundColor: accentColor,
           color: "#ffffff",
           display: "flex",
@@ -82,13 +82,13 @@ export function EyeTip({
           justifyContent: "center",
           marginTop: 1
         }}>
-        <EyeIcon size={13} weight="bold" />
+        <EyeIcon size={11} weight="bold" />
       </div>
 
       <div style={{ flex: 1, minWidth: 0 }}>
         <div
           style={{
-            fontSize: 11,
+            fontSize: 10.5,
             fontWeight: 700,
             color: titleColor,
             letterSpacing: "-0.01em"
@@ -97,8 +97,8 @@ export function EyeTip({
         </div>
         <p
           style={{
-            margin: "3px 0 6px 0",
-            fontSize: 10.5,
+            margin: "2px 0 5px 0",
+            fontSize: 10,
             lineHeight: 1.45,
             color: bodyColor
           }}>
@@ -132,12 +132,12 @@ export function EyeTip({
               display: "inline-flex",
               alignItems: "center",
               gap: 5,
-              padding: "3px 8px",
-              borderRadius: 6,
+              padding: "3px 7px",
+              borderRadius: 5,
               border: `1px solid ${cardBorder}`,
               backgroundColor: isDark ? "rgba(99, 102, 241, 0.2)" : "#e0e7ff",
               color: accentColor,
-              fontSize: 10,
+              fontSize: 9.5,
               fontWeight: 600,
               cursor: "pointer",
               transition: "all 0.15s ease"

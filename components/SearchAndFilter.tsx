@@ -24,9 +24,9 @@ export function SearchAndFilter({
   theme
 }: Readonly<SearchAndFilterProps>) {
   return (
-    <div style={{ padding: "4px 14px 8px 14px" }}>
-      {/* Sleek Search Input */}
-      <div style={{ position: "relative", marginBottom: 8 }}>
+    <div style={{ padding: "4px 14px 6px 14px" }}>
+      {/* Pill-Shaped Search Input */}
+      <div style={{ position: "relative", marginBottom: 6 }}>
         <input
           type="text"
           placeholder="Search subjects or course codes..."
@@ -34,13 +34,13 @@ export function SearchAndFilter({
           onChange={(e) => onSearchChange(e.target.value)}
           style={{
             width: "100%",
-            height: 34,
+            height: 30,
             boxSizing: "border-box",
-            padding: "6px 28px 6px 32px",
-            borderRadius: 9,
+            padding: "5px 28px 5px 30px",
+            borderRadius: 9999,
             border: `1px solid ${theme.inputBorder}`,
             backgroundColor: theme.inputBg,
-            fontSize: 12,
+            fontSize: 11.5,
             fontWeight: 500,
             color: theme.inputText,
             outline: "none",
@@ -66,7 +66,7 @@ export function SearchAndFilter({
             display: "flex",
             alignItems: "center"
           }}>
-          <MagnifyingGlassIcon size={14} weight="bold" />
+          <MagnifyingGlassIcon size={13} weight="bold" />
         </div>
 
         {searchTerm && (
@@ -87,56 +87,54 @@ export function SearchAndFilter({
               alignItems: "center",
               justifyContent: "center"
             }}>
-            <XIcon size={13} weight="bold" />
+            <XIcon size={12} weight="bold" />
           </button>
         )}
       </div>
 
-      {/* iOS/Linear Style Segmented Control */}
+      {/* Underline Indicator Filter Tabs */}
       <div
         style={{
           display: "flex",
-          gap: 3,
-          backgroundColor: theme.segmentBg,
-          border: `1px solid ${theme.segmentBorder}`,
-          borderRadius: 9,
-          padding: 3
+          gap: 0
         }}>
         {/* Tab: All */}
         <button
           onClick={() => onFilterChange("all")}
           style={{
             flex: 1,
-            padding: "5px 4px",
-            borderRadius: 7,
+            padding: "4px 4px 6px 4px",
+            borderRadius: 0,
             border: "none",
-            backgroundColor: activeFilter === "all" ? theme.segmentActiveBg : "transparent",
-            color: activeFilter === "all" ? theme.segmentActiveText : theme.segmentInactiveText,
-            boxShadow: activeFilter === "all" ? theme.segmentActiveShadow : "none",
-            fontSize: 11,
-            fontWeight: 600,
+            borderBottom: activeFilter === "all"
+              ? `2px solid ${theme.accent}`
+              : "2px solid transparent",
+            backgroundColor: "transparent",
+            color: activeFilter === "all" ? theme.textPrimary : theme.segmentInactiveText,
+            fontSize: 10.5,
+            fontWeight: activeFilter === "all" ? 700 : 500,
             cursor: "pointer",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            gap: 5,
+            gap: 4,
             transition: "all 0.15s ease"
           }}>
           <span>All</span>
           <span
             style={{
-              padding: "1px 6px",
+              padding: "0px 5px",
               borderRadius: 9999,
-              fontSize: 9.5,
+              fontSize: 9,
               fontWeight: 700,
-              backgroundColor:
-                activeFilter === "all"
-                  ? theme.name === "dark"
-                    ? "rgba(255, 255, 255, 0.12)"
-                    : "rgba(0, 0, 0, 0.06)"
-                  : theme.metricBg,
-              color: activeFilter === "all" ? theme.segmentActiveText : theme.textMuted,
-              fontVariantNumeric: "tabular-nums"
+              backgroundColor: activeFilter === "all"
+                ? theme.name === "dark"
+                  ? "rgba(255, 255, 255, 0.1)"
+                  : "rgba(0, 0, 0, 0.05)"
+                : theme.metricBg,
+              color: activeFilter === "all" ? theme.textPrimary : theme.textMuted,
+              fontVariantNumeric: "tabular-nums",
+              lineHeight: "16px"
             }}>
             {counts.all}
           </span>
@@ -147,32 +145,34 @@ export function SearchAndFilter({
           onClick={() => onFilterChange("risk")}
           style={{
             flex: 1,
-            padding: "5px 4px",
-            borderRadius: 7,
+            padding: "4px 4px 6px 4px",
+            borderRadius: 0,
             border: "none",
-            backgroundColor: activeFilter === "risk" ? theme.segmentActiveBg : "transparent",
+            borderBottom: activeFilter === "risk"
+              ? `2px solid ${theme.statusColors.deficit.solid}`
+              : "2px solid transparent",
+            backgroundColor: "transparent",
             color:
               activeFilter === "risk"
                 ? theme.statusColors.deficit.solid
                 : counts.risk > 0
                 ? theme.statusColors.deficit.solid
                 : theme.segmentInactiveText,
-            boxShadow: activeFilter === "risk" ? theme.segmentActiveShadow : "none",
-            fontSize: 11,
-            fontWeight: 600,
+            fontSize: 10.5,
+            fontWeight: activeFilter === "risk" ? 700 : 500,
             cursor: "pointer",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            gap: 5,
+            gap: 4,
             transition: "all 0.15s ease"
           }}>
           <span>At Risk</span>
           <span
             style={{
-              padding: "1px 6px",
+              padding: "0px 5px",
               borderRadius: 9999,
-              fontSize: 9.5,
+              fontSize: 9,
               fontWeight: 700,
               backgroundColor:
                 activeFilter === "risk"
@@ -184,7 +184,8 @@ export function SearchAndFilter({
                 activeFilter === "risk" || counts.risk > 0
                   ? theme.statusColors.deficit.solid
                   : theme.textMuted,
-              fontVariantNumeric: "tabular-nums"
+              fontVariantNumeric: "tabular-nums",
+              lineHeight: "16px"
             }}>
             {counts.risk}
           </span>
@@ -195,30 +196,32 @@ export function SearchAndFilter({
           onClick={() => onFilterChange("safe")}
           style={{
             flex: 1,
-            padding: "5px 4px",
-            borderRadius: 7,
+            padding: "4px 4px 6px 4px",
+            borderRadius: 0,
             border: "none",
-            backgroundColor: activeFilter === "safe" ? theme.segmentActiveBg : "transparent",
+            borderBottom: activeFilter === "safe"
+              ? `2px solid ${theme.statusColors.surplus.solid}`
+              : "2px solid transparent",
+            backgroundColor: "transparent",
             color:
               activeFilter === "safe"
                 ? theme.statusColors.surplus.solid
                 : theme.segmentInactiveText,
-            boxShadow: activeFilter === "safe" ? theme.segmentActiveShadow : "none",
-            fontSize: 11,
-            fontWeight: 600,
+            fontSize: 10.5,
+            fontWeight: activeFilter === "safe" ? 700 : 500,
             cursor: "pointer",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            gap: 5,
+            gap: 4,
             transition: "all 0.15s ease"
           }}>
           <span>Safe</span>
           <span
             style={{
-              padding: "1px 6px",
+              padding: "0px 5px",
               borderRadius: 9999,
-              fontSize: 9.5,
+              fontSize: 9,
               fontWeight: 700,
               backgroundColor:
                 activeFilter === "safe"
@@ -228,7 +231,8 @@ export function SearchAndFilter({
                 activeFilter === "safe"
                   ? theme.statusColors.surplus.solid
                   : theme.textMuted,
-              fontVariantNumeric: "tabular-nums"
+              fontVariantNumeric: "tabular-nums",
+              lineHeight: "16px"
             }}>
             {counts.safe}
           </span>

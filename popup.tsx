@@ -389,17 +389,29 @@ function IndexPopup() {
         }}>
         <style>{`
           ::-webkit-scrollbar {
-            width: 5px;
+            width: 3px;
           }
           ::-webkit-scrollbar-track {
             background: transparent;
           }
           ::-webkit-scrollbar-thumb {
-            background: ${themeMode === "dark" ? "rgba(255, 255, 255, 0.15)" : "rgba(0, 0, 0, 0.15)"};
+            background: ${currentTheme.scrollbarIdle};
             border-radius: 9999px;
+            transition: background 0.2s ease;
           }
           ::-webkit-scrollbar-thumb:hover {
-            background: ${themeMode === "dark" ? "rgba(255, 255, 255, 0.28)" : "rgba(0, 0, 0, 0.28)"};
+            background: ${currentTheme.scrollbarHover};
+          }
+          ::selection {
+            background: ${currentTheme.selectionBg};
+            color: ${currentTheme.selectionText};
+          }
+          *:focus-visible {
+            outline: 2px solid ${currentTheme.accent};
+            outline-offset: 1px;
+          }
+          button:active {
+            transform: scale(0.97);
           }
         `}</style>
 

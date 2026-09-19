@@ -88,13 +88,13 @@ export function AttendanceOverview({
     <div
       style={{
         flexShrink: 0,
-        backgroundColor: theme.cardBg,
+        backgroundColor: isSimulated ? theme.cardBg : theme.overviewAccentBg,
         margin: "8px 14px 8px 14px",
         borderRadius: 12,
-        padding: "13px 15px",
+        padding: "14px 15px 12px 15px",
         border: isSimulated
           ? `1px dashed ${theme.accent}`
-          : `1px solid ${theme.cardBorder}`,
+          : `1px solid ${theme.overviewAccentBorder}`,
         boxShadow: theme.cardShadow,
         boxSizing: "border-box",
         transition: "all 0.2s ease"
@@ -106,15 +106,15 @@ export function AttendanceOverview({
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            padding: "5px 9px",
+            padding: "4px 8px",
             marginBottom: 10,
-            borderRadius: 8,
+            borderRadius: 7,
             backgroundColor:
               theme.name === "dark"
                 ? "rgba(99, 102, 241, 0.16)"
                 : "rgba(79, 70, 229, 0.08)",
             border: `1px solid ${theme.accent}33`,
-            fontSize: 10.5,
+            fontSize: 10,
             color: theme.accent
           }}>
           <div style={{ display: "flex", alignItems: "center", gap: 5, fontWeight: 600 }}>
@@ -136,72 +136,115 @@ export function AttendanceOverview({
                 background: "none",
                 border: "none",
                 color: theme.statusColors.deficit.solid,
-                fontSize: 10.5,
+                fontSize: 10,
                 fontWeight: 600,
                 cursor: "pointer",
                 padding: "2px 4px"
               }}>
-              <ArrowCounterClockwiseIcon size={12} weight="bold" />
+              <ArrowCounterClockwiseIcon size={11} weight="bold" />
               <span>Reset All</span>
             </button>
           )}
         </div>
       )}
 
-      {/* Top Row: Direct Action Verdict + Percentage Pill */}
+      {/* Top Row: Hero Percentage + Action Verdict */}
       <div
         style={{
           display: "flex",
-          alignItems: "flex-start",
+          alignItems: "center",
           justifyContent: "space-between",
-          gap: 12
+          gap: 14
         }}>
-        <div style={{ flex: 1, minWidth: 0 }}>
+        {/* Hero Percentage Numeral */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "baseline",
+            gap: 3,
+            flexShrink: 0
+          }}>
+          <span
+            style={{
+              fontSize: 28,
+              fontWeight: 800,
+              letterSpacing: "-0.03em",
+              color: statusTheme.solid,
+              lineHeight: 1,
+              fontVariantNumeric: "tabular-nums",
+              transition: "color 0.2s ease"
+            }}>
+            {safeAggregate.toFixed(1)}
+          </span>
+          <span
+            style={{
+              fontSize: 14,
+              fontWeight: 700,
+              color: statusTheme.solid,
+              opacity: 0.7
+            }}>
+            %
+          </span>
+          {isSimulated && aggregateDelta !== 0 && (
+            <span
+              style={{
+                fontSize: 10,
+                fontWeight: 600,
+                color: aggregateDelta > 0 ? theme.statusColors.surplus.solid : theme.statusColors.deficit.solid,
+                marginLeft: 4
+              }}>
+              {aggregateDelta > 0 ? `+${aggregateDelta}` : aggregateDelta}%
+            </span>
+          )}
+        </div>
+
+        {/* Action Verdict */}
+        <div style={{ flex: 1, minWidth: 0, textAlign: "right" }}>
           {/* Primary Action Insight */}
           <div
             style={{
-              fontSize: 15,
+              fontSize: 13,
               fontWeight: 700,
               letterSpacing: "-0.02em",
               color: theme.textPrimary,
               lineHeight: 1.25
             }}>
             {hasDeficit ? (
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                <WarningCircleIcon size={17} weight="fill" style={{ color: theme.statusColors.deficit.solid, flexShrink: 0 }} />
+              <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "flex-end", gap: 5 }}>
                 <span>
                   <strong style={{ color: theme.statusColors.deficit.solid, fontWeight: 700 }}>
                     {deficitCount} {deficitCount === 1 ? "course" : "courses"}
                   </strong>{" "}
                   below 75%
                 </span>
+                <WarningCircleIcon size={15} weight="fill" style={{ color: theme.statusColors.deficit.solid, flexShrink: 0 }} />
               </span>
             ) : isAggregateSafe ? (
               aggregateBufferClasses > 0 ? (
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                  <ShieldCheckIcon size={17} weight="fill" style={{ color: statusTheme.solid, flexShrink: 0 }} />
+                <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "flex-end", gap: 5 }}>
                   <span>
                     Can skip{" "}
                     <strong style={{ color: statusTheme.solid, fontWeight: 700 }}>
                       {aggregateBufferClasses} {aggregateBufferClasses === 1 ? "class" : "classes"}
                     </strong>
                   </span>
+                  <ShieldCheckIcon size={15} weight="fill" style={{ color: statusTheme.solid, flexShrink: 0 }} />
                 </span>
               ) : (
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                  <ShieldCheckIcon size={17} weight="fill" style={{ color: statusTheme.solid, flexShrink: 0 }} />
+                <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "flex-end", gap: 5 }}>
                   <span>On 75% boundary</span>
+                  <ShieldCheckIcon size={15} weight="fill" style={{ color: statusTheme.solid, flexShrink: 0 }} />
                 </span>
               )
             ) : (
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                <WarningCircleIcon size={17} weight="fill" style={{ color: statusTheme.solid, flexShrink: 0 }} />
+              <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "flex-end", gap: 5 }}>
                 <span>
                   Attend next{" "}
                   <strong style={{ color: statusTheme.solid, fontWeight: 700 }}>
                     {aggregateNeededClasses} {aggregateNeededClasses === 1 ? "class" : "classes"}
                   </strong>
                 </span>
+                <WarningCircleIcon size={15} weight="fill" style={{ color: statusTheme.solid, flexShrink: 0 }} />
               </span>
             )}
           </div>
@@ -209,57 +252,31 @@ export function AttendanceOverview({
           {/* Contextual Status Subtitle */}
           <div
             style={{
-              fontSize: 11,
+              fontSize: 10.5,
               color: theme.textSecondary,
-              marginTop: 3,
+              marginTop: 2,
               fontWeight: 400,
               lineHeight: 1.4
             }}>
             {hasDeficit
-              ? `Attend next ${classesNeededToRecover} ${classesNeededToRecover === 1 ? "class" : "classes"} to recover · ${safeAggregate.toFixed(1)}% aggregate`
+              ? `Attend next ${classesNeededToRecover} to recover`
               : isAggregateSafe
-                ? `All courses meet 75% rule · ${safeAggregate.toFixed(1)}% aggregate`
-                : `${safeAggregate.toFixed(1)}% aggregate · Below 75% requirement`}
+                ? "All courses meet 75% rule"
+                : "Below 75% requirement"}
           </div>
         </div>
-
-        {/* Clean Percentage Badge */}
-        <span
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 4,
-            padding: "3px 8px",
-            borderRadius: 9999,
-            backgroundColor: statusTheme.bg,
-            color: statusTheme.text,
-            border: `1px solid ${statusTheme.border}`,
-            fontSize: 11.5,
-            fontWeight: 700,
-            fontVariantNumeric: "tabular-nums",
-            letterSpacing: "-0.01em",
-            flexShrink: 0
-          }}>
-          {hasDeficit && <WarningCircleIcon size={12} weight="fill" />}
-          {safeAggregate.toFixed(1)}%
-          {isSimulated && aggregateDelta !== 0 && (
-            <span style={{ fontSize: 9.5, opacity: 0.85 }}>
-              ({aggregateDelta > 0 ? `+${aggregateDelta}` : aggregateDelta}%)
-            </span>
-          )}
-        </span>
       </div>
 
-      {/* Slim, elegant progress track */}
+      {/* Thicker progress track with inner glow */}
       <div
         style={{
           position: "relative",
-          height: 4,
+          height: 6,
           backgroundColor: theme.progressBarBg,
           borderRadius: 9999,
           overflow: "hidden",
-          marginTop: 11,
-          marginBottom: 9
+          marginTop: 12,
+          marginBottom: 10
         }}>
         <div
           style={{
@@ -269,7 +286,8 @@ export function AttendanceOverview({
             borderRadius: 9999,
             transformOrigin: "left",
             transform: `scaleX(${progressRatio})`,
-            transition: "transform 0.3s ease-out"
+            transition: "transform 0.3s ease-out",
+            boxShadow: theme.progressBarGlow
           }}
         />
       </div>
@@ -280,7 +298,7 @@ export function AttendanceOverview({
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          fontSize: 10.5,
+          fontSize: 10,
           color: theme.textMuted,
           fontVariantNumeric: "tabular-nums"
         }}>
@@ -304,8 +322,8 @@ export function AttendanceOverview({
                   isTomorrowLeaveSimulated ? theme.accent : theme.inputBorder
                 }`,
                 borderRadius: 6,
-                padding: "2px 6px",
-                fontSize: 10,
+                padding: "3px 8px",
+                fontSize: 9.5,
                 fontWeight: 600,
                 color: isTomorrowLeaveSimulated ? theme.accent : theme.textSecondary,
                 cursor: "pointer",
@@ -316,7 +334,7 @@ export function AttendanceOverview({
                   : "transparent",
                 transition: "all 0.15s ease"
               }}>
-              <CalendarCheckIcon size={12} weight="bold" />
+              <CalendarCheckIcon size={11} weight="bold" />
               <span>{isTomorrowLeaveSimulated ? "Revert Tomorrow" : "Skip Tomorrow?"}</span>
             </button>
           )}
