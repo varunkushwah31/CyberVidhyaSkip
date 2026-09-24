@@ -1,6 +1,6 @@
-# CyberVidhya Attendance & Skip Planner
+# CyberVidya Attendance & Skip Planner
 
-Chrome extension for students of KIET, ABES, AKGEC, and all institutions using CyberVidhya ERP to track attendance, compute safe skip allowances, simulate leave impact, and prevent debarment under the 75% attendance rule.
+Chrome extension for students of KIET, ABES, AKGEC, and all institutions using CyberVidya ERP to track attendance, compute safe skip allowances, simulate leave impact, and prevent debarment under the 75% attendance rule.
 
 ## 🚀 Key Features
 
@@ -8,7 +8,7 @@ Chrome extension for students of KIET, ABES, AKGEC, and all institutions using C
 - **Duty Leave (OD) Recovery Tracker**: Log pending On-Duty / Medical certificates to project your attendance and debarment clearance.
 - **Full-Semester Skip Budget**: Calculate remaining skips allowed across the entire ~45-lecture semester under the 75% threshold.
 - **Multi-Institute Support**: Works automatically on any `*.cybervidya.net` portal with dynamic subdomain detection.
-- **In-Portal Enhancements**: Danger row highlighting (<75% warning tint) and a non-intrusive floating quick pill widget directly inside CyberVidhya.
+- **In-Portal Enhancements**: Danger row highlighting (<75% warning tint) and a non-intrusive floating quick pill widget directly inside CyberVidya.
 
 ## 📌 User Instructions: Getting Accurate Data
 
