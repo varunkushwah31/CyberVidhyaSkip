@@ -23,7 +23,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   public override componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error("CyberVidhya Extension Error:", error, errorInfo)
+    console.error("CyberVidya Extension Error:", error, errorInfo)
   }
 
   private handleReset = () => {
