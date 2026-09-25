@@ -178,7 +178,7 @@ export function CourseList({
           color: theme.textPrimary,
           letterSpacing: "-0.01em"
         }}>
-        {isCyberVidhya ? "Ready to Track Attendance" : "CyberVidhya Attendance Tracker"}
+        {isCyberVidhya ? "Ready to Track Attendance" : "CyberVidya Attendance Tracker"}
       </div>
 
       <p
